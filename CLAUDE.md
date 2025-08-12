@@ -83,3 +83,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Designed for Raspberry Pi with GPIO access
 - DHT22 on GPIO 4, MPL115A2 with reset/shutdown control on GPIO 17/27
 - Uses RPi.GPIO and smbus2 libraries for hardware communication
+
+- So, I'm currently talking to you from a Raspberry Pi 4 called masterbox. It was influxDB running on it at 8086. However, the code in this repository is actually running on a Pi Zero W called weatherbox. Because weatherbox's resources are quite limited, I cannot connect to it with my IDE so I code on masterbox and then transfer the code to weatherbox. What I want to do is run FrontEnd on masterbox and have weatherbox send it's readings to influxdb running on masterbox.
