@@ -74,7 +74,13 @@ class WeatherDataService:
                             latest_time = timestamp
             
             if data and latest_time:
-                data["timestamp"] = latest_time.isoformat()
+                # Convert UTC timestamp to local time
+                import pytz
+                local_tz = pytz.timezone('America/New_York')
+                if latest_time.tzinfo is None:
+                    latest_time = pytz.utc.localize(latest_time)
+                local_time = latest_time.astimezone(local_tz)
+                data["timestamp"] = local_time.isoformat()
                 return data
             
             return None
@@ -139,8 +145,16 @@ class WeatherDataService:
             
             readings = []
             for record in tables[0].records:
+                # Convert UTC timestamp to local time
+                import pytz
+                local_tz = pytz.timezone('America/New_York')
+                timestamp = record.get_time()
+                if timestamp.tzinfo is None:
+                    timestamp = pytz.utc.localize(timestamp)
+                local_time = timestamp.astimezone(local_tz)
+                
                 data = {
-                    "timestamp": record.get_time().isoformat(),
+                    "timestamp": local_time.isoformat(),
                     "pressure_hpa": record.values.get("pressure_hpa")
                 }
                 readings.append(data)
@@ -177,7 +191,15 @@ class WeatherDataService:
             
             for table in tables:
                 for record in table.records:
-                    timestamp = record.get_time().isoformat()
+                    # Convert UTC timestamp to local time
+                    import pytz
+                    local_tz = pytz.timezone('America/New_York')
+                    timestamp_dt = record.get_time()
+                    if timestamp_dt.tzinfo is None:
+                        timestamp_dt = pytz.utc.localize(timestamp_dt)
+                    local_time = timestamp_dt.astimezone(local_tz)
+                    timestamp = local_time.isoformat()
+                    
                     field = record.values.get("_field")
                     value = record.values.get("_value")
                     
@@ -314,7 +336,15 @@ class WeatherDataService:
             
             for table in tables:
                 for record in table.records:
-                    timestamp = record.get_time().isoformat()
+                    # Convert UTC timestamp to local time
+                    import pytz
+                    local_tz = pytz.timezone('America/New_York')
+                    timestamp_dt = record.get_time()
+                    if timestamp_dt.tzinfo is None:
+                        timestamp_dt = pytz.utc.localize(timestamp_dt)
+                    local_time = timestamp_dt.astimezone(local_tz)
+                    timestamp = local_time.isoformat()
+                    
                     field = record.values.get("_field")
                     value = record.values.get("_value")
                     
