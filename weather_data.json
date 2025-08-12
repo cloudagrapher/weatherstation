@@ -1,0 +1,1115 @@
+[
+  {
+    "timestamp": "2025-08-11T18:48:13.128559",
+    "temperature_f": 79.3,
+    "temperature_c": 26.3,
+    "humidity": 91.1,
+    "pressure_hpa": 1016.08
+  },
+  {
+    "timestamp": "2025-08-11T18:49:08.339130",
+    "temperature_f": 79.3,
+    "temperature_c": 26.3,
+    "humidity": 90.8,
+    "pressure_hpa": 1015.81
+  },
+  {
+    "timestamp": "2025-08-11T18:54:06.055418",
+    "temperature_f": 79.7,
+    "temperature_c": 26.5,
+    "humidity": 91.1,
+    "pressure_hpa": 1015.51
+  },
+  {
+    "timestamp": "2025-08-11T18:57:30.677627",
+    "temperature_f": 79.9,
+    "temperature_c": 26.6,
+    "humidity": 90.9,
+    "pressure_hpa": 1015.51
+  },
+  {
+    "timestamp": "2025-08-11T18:57:48.769955",
+    "temperature_f": 79.9,
+    "temperature_c": 26.6,
+    "humidity": 91.4,
+    "pressure_hpa": 1015.51
+  },
+  {
+    "timestamp": "2025-08-11T19:11:07.099784",
+    "temperature_f": 79.3,
+    "temperature_c": 26.3,
+    "humidity": 90.9,
+    "pressure_hpa": 1016.08
+  },
+  {
+    "timestamp": "2025-08-11T21:30:57.194395",
+    "temperature_f": 79.7,
+    "temperature_c": 26.5,
+    "humidity": 90.3,
+    "pressure_hpa": 1019.87
+  },
+  {
+    "timestamp": "2025-08-11T21:31:17.377534",
+    "temperature_f": 77.7,
+    "temperature_c": 25.4,
+    "humidity": 92.8,
+    "pressure_hpa": 1021.21
+  },
+  {
+    "timestamp": "2025-08-11T22:43:38.283671",
+    "temperature_f": 77.7,
+    "temperature_c": 25.4,
+    "humidity": 92.8,
+    "pressure_hpa": 1020.93
+  },
+  {
+    "timestamp": "2025-08-11T22:44:21.630688",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 93.1,
+    "pressure_hpa": 1021.47
+  },
+  {
+    "timestamp": "2025-08-11T22:48:54.745491",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 93.1,
+    "pressure_hpa": 1021.76
+  },
+  {
+    "timestamp": "2025-08-11T22:49:41.565493",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 93.1,
+    "pressure_hpa": 1021.21
+  },
+  {
+    "timestamp": "2025-08-11T23:18:24.663976",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 93.0,
+    "pressure_hpa": 1021.73
+  },
+  {
+    "timestamp": "2025-08-11T23:18:29.297603",
+    "temperature_f": 76.8,
+    "temperature_c": 24.9,
+    "humidity": 93.8,
+    "pressure_hpa": 1021.73
+  },
+  {
+    "timestamp": "2025-08-11T23:25:15.941845",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 93.8,
+    "pressure_hpa": 1022.53
+  },
+  {
+    "timestamp": "2025-08-11T23:28:22.543949",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 94.0,
+    "pressure_hpa": 1022.53
+  },
+  {
+    "timestamp": "2025-08-11T23:29:35.364924",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 94.1,
+    "pressure_hpa": 1021.99
+  },
+  {
+    "timestamp": "2025-08-11T23:30:36.471237",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 94.2,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-11T23:34:36.581895",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 94.2,
+    "pressure_hpa": 1021.99
+  },
+  {
+    "timestamp": "2025-08-11T23:39:39.815070",
+    "temperature_f": 76.5,
+    "temperature_c": 24.7,
+    "humidity": 94.3,
+    "pressure_hpa": 1022.25
+  },
+  {
+    "timestamp": "2025-08-11T23:44:40.500045",
+    "temperature_f": 76.5,
+    "temperature_c": 24.7,
+    "humidity": 94.2,
+    "pressure_hpa": 1022.53
+  },
+  {
+    "timestamp": "2025-08-11T23:49:41.184586",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 94.2,
+    "pressure_hpa": 1021.99
+  },
+  {
+    "timestamp": "2025-08-11T23:54:41.872471",
+    "temperature_f": 76.5,
+    "temperature_c": 24.7,
+    "humidity": 94.1,
+    "pressure_hpa": 1022.27
+  },
+  {
+    "timestamp": "2025-08-11T23:59:42.560877",
+    "temperature_f": 76.5,
+    "temperature_c": 24.7,
+    "humidity": 94.2,
+    "pressure_hpa": 1022.25
+  },
+  {
+    "timestamp": "2025-08-12T00:04:43.263100",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 93.9,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T00:09:43.955581",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 93.9,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T00:14:44.643161",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 94.1,
+    "pressure_hpa": 1021.99
+  },
+  {
+    "timestamp": "2025-08-12T00:19:45.335120",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 94.1,
+    "pressure_hpa": 1022.53
+  },
+  {
+    "timestamp": "2025-08-12T00:24:48.542908",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 94.1,
+    "pressure_hpa": 1021.72
+  },
+  {
+    "timestamp": "2025-08-12T00:29:49.234427",
+    "temperature_f": 76.1,
+    "temperature_c": 24.5,
+    "humidity": 94.1,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T00:34:54.984743",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.2,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T00:39:55.676588",
+    "temperature_f": 76.1,
+    "temperature_c": 24.5,
+    "humidity": 94.2,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T00:44:56.370618",
+    "temperature_f": 76.1,
+    "temperature_c": 24.5,
+    "humidity": 94.4,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T00:49:57.069346",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.3,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T00:54:57.762228",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.4,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T00:59:58.461498",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.5,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T01:05:01.682597",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.6,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T01:05:25.429062",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 94.5,
+    "pressure_hpa": 1022.78
+  },
+  {
+    "timestamp": "2025-08-12T01:10:03.071864",
+    "temperature_f": 75.7,
+    "temperature_c": 24.3,
+    "humidity": 94.5,
+    "pressure_hpa": 1023.3
+  },
+  {
+    "timestamp": "2025-08-12T01:15:03.782016",
+    "temperature_f": 75.7,
+    "temperature_c": 24.3,
+    "humidity": 94.9,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T01:20:04.482187",
+    "temperature_f": 75.4,
+    "temperature_c": 24.1,
+    "humidity": 95.6,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T01:25:05.172885",
+    "temperature_f": 75.4,
+    "temperature_c": 24.1,
+    "humidity": 96.0,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T01:30:05.876526",
+    "temperature_f": 75.2,
+    "temperature_c": 24.0,
+    "humidity": 95.9,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T01:35:06.577364",
+    "temperature_f": 75.2,
+    "temperature_c": 24.0,
+    "humidity": 96.1,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T01:40:09.807146",
+    "temperature_f": 75.0,
+    "temperature_c": 23.9,
+    "humidity": 96.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T01:45:10.513967",
+    "temperature_f": 75.0,
+    "temperature_c": 23.9,
+    "humidity": 96.2,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T01:50:13.744938",
+    "temperature_f": 75.0,
+    "temperature_c": 23.9,
+    "humidity": 96.6,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T01:55:14.451005",
+    "temperature_f": 75.0,
+    "temperature_c": 23.9,
+    "humidity": 96.6,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:00:20.203891",
+    "temperature_f": 74.8,
+    "temperature_c": 23.8,
+    "humidity": 97.0,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:05:26.002275",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:10:26.706068",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.3,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:15:27.414656",
+    "temperature_f": 74.8,
+    "temperature_c": 23.8,
+    "humidity": 97.5,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:20:28.123142",
+    "temperature_f": 74.8,
+    "temperature_c": 23.8,
+    "humidity": 97.7,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T02:25:28.832967",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.0,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T02:30:29.540081",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.8,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:35:30.257082",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.9,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:40:33.507558",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T02:45:34.221536",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.9,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T02:50:37.463866",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T02:55:38.177428",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:00:38.892314",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 97.9,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:05:39.605035",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.0,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:10:45.396504",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.0,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T03:15:46.100646",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.0,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:20:51.862891",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T03:25:52.575662",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1023.81
+  },
+  {
+    "timestamp": "2025-08-12T03:30:53.280464",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:35:54.007169",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T03:40:57.262040",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T03:45:57.974417",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T03:50:58.682420",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1023.29
+  },
+  {
+    "timestamp": "2025-08-12T03:55:59.423412",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:01:00.160787",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:06:00.888495",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:11:06.663056",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:16:07.383127",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T04:21:10.663091",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:26:11.404856",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T04:31:12.125653",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T04:36:12.849267",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T04:41:13.594176",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T04:46:14.317937",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T04:51:15.043661",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T04:56:18.302285",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T05:01:21.583685",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T05:06:24.849176",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T05:11:25.566718",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:16:28.833657",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:21:32.091537",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T05:26:35.354991",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:31:36.082075",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T05:36:36.814205",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:41:40.075219",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:46:40.805816",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.1,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T05:51:41.517993",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.1,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T05:56:42.230366",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T06:01:45.494579",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T06:06:46.219968",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T06:11:46.961226",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.2,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T06:16:47.686687",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.3,
+    "pressure_hpa": 1025.12
+  },
+  {
+    "timestamp": "2025-08-12T06:21:48.428581",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T06:26:49.185155",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.3,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T06:31:49.924077",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.3,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T06:36:50.667463",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.4,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T06:41:51.395087",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.4,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T06:46:52.120898",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.5,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T06:51:52.877417",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T06:56:53.613145",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:01:54.350823",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:06:57.635011",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.7,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:12:00.900861",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.7,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:17:01.630702",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.7,
+    "pressure_hpa": 1025.1
+  },
+  {
+    "timestamp": "2025-08-12T07:22:02.346340",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:27:03.093252",
+    "temperature_f": 74.1,
+    "temperature_c": 23.4,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.85
+  },
+  {
+    "timestamp": "2025-08-12T07:32:03.850002",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T07:37:04.591284",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T07:42:05.309903",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.7,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T07:47:06.073963",
+    "temperature_f": 74.3,
+    "temperature_c": 23.5,
+    "humidity": 98.6,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T07:52:06.807311",
+    "temperature_f": 74.5,
+    "temperature_c": 23.6,
+    "humidity": 98.5,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T07:57:07.552656",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.5,
+    "pressure_hpa": 1024.59
+  },
+  {
+    "timestamp": "2025-08-12T08:02:10.818699",
+    "temperature_f": 74.8,
+    "temperature_c": 23.8,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T08:07:11.572334",
+    "temperature_f": 74.7,
+    "temperature_c": 23.7,
+    "humidity": 98.2,
+    "pressure_hpa": 1024.34
+  },
+  {
+    "timestamp": "2025-08-12T08:12:12.313001",
+    "temperature_f": 75.0,
+    "temperature_c": 23.9,
+    "humidity": 98.0,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T08:17:15.588016",
+    "temperature_f": 75.2,
+    "temperature_c": 24.0,
+    "humidity": 97.5,
+    "pressure_hpa": 1023.83
+  },
+  {
+    "timestamp": "2025-08-12T08:22:16.340034",
+    "temperature_f": 75.2,
+    "temperature_c": 24.0,
+    "humidity": 97.5,
+    "pressure_hpa": 1023.57
+  },
+  {
+    "timestamp": "2025-08-12T08:27:17.099911",
+    "temperature_f": 75.4,
+    "temperature_c": 24.1,
+    "humidity": 97.4,
+    "pressure_hpa": 1024.08
+  },
+  {
+    "timestamp": "2025-08-12T08:32:17.854340",
+    "temperature_f": 75.4,
+    "temperature_c": 24.1,
+    "humidity": 97.2,
+    "pressure_hpa": 1023.83
+  },
+  {
+    "timestamp": "2025-08-12T08:37:21.121854",
+    "temperature_f": 75.6,
+    "temperature_c": 24.2,
+    "humidity": 96.9,
+    "pressure_hpa": 1023.83
+  },
+  {
+    "timestamp": "2025-08-12T08:42:21.851777",
+    "temperature_f": 75.6,
+    "temperature_c": 24.2,
+    "humidity": 96.9,
+    "pressure_hpa": 1023.57
+  },
+  {
+    "timestamp": "2025-08-12T08:47:22.606106",
+    "temperature_f": 75.7,
+    "temperature_c": 24.3,
+    "humidity": 96.8,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T08:52:23.357977",
+    "temperature_f": 75.7,
+    "temperature_c": 24.3,
+    "humidity": 96.7,
+    "pressure_hpa": 1022.25
+  },
+  {
+    "timestamp": "2025-08-12T08:57:26.635571",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 96.6,
+    "pressure_hpa": 1023.04
+  },
+  {
+    "timestamp": "2025-08-12T09:02:27.379618",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 96.6,
+    "pressure_hpa": 1023.06
+  },
+  {
+    "timestamp": "2025-08-12T09:07:28.130200",
+    "temperature_f": 75.9,
+    "temperature_c": 24.4,
+    "humidity": 96.7,
+    "pressure_hpa": 1022.53
+  },
+  {
+    "timestamp": "2025-08-12T09:12:28.882705",
+    "temperature_f": 76.1,
+    "temperature_c": 24.5,
+    "humidity": 96.8,
+    "pressure_hpa": 1023.06
+  },
+  {
+    "timestamp": "2025-08-12T09:17:29.637273",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 96.6,
+    "pressure_hpa": 1021.99
+  },
+  {
+    "timestamp": "2025-08-12T09:22:30.398314",
+    "temperature_f": 76.3,
+    "temperature_c": 24.6,
+    "humidity": 96.6,
+    "pressure_hpa": 1021.45
+  },
+  {
+    "timestamp": "2025-08-12T09:27:33.685308",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 96.3,
+    "pressure_hpa": 1021.73
+  },
+  {
+    "timestamp": "2025-08-12T09:32:37.010886",
+    "temperature_f": 76.6,
+    "temperature_c": 24.8,
+    "humidity": 96.1,
+    "pressure_hpa": 1021.19
+  },
+  {
+    "timestamp": "2025-08-12T09:37:37.766857",
+    "temperature_f": 76.8,
+    "temperature_c": 24.9,
+    "humidity": 96.1,
+    "pressure_hpa": 1021.73
+  },
+  {
+    "timestamp": "2025-08-12T09:42:41.044817",
+    "temperature_f": 77.0,
+    "temperature_c": 25.0,
+    "humidity": 95.5,
+    "pressure_hpa": 1020.67
+  },
+  {
+    "timestamp": "2025-08-12T09:47:44.337262",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 95.2,
+    "pressure_hpa": 1020.41
+  },
+  {
+    "timestamp": "2025-08-12T09:52:45.091357",
+    "temperature_f": 77.2,
+    "temperature_c": 25.1,
+    "humidity": 95.2,
+    "pressure_hpa": 1020.41
+  },
+  {
+    "timestamp": "2025-08-12T09:57:45.843477",
+    "temperature_f": 77.4,
+    "temperature_c": 25.2,
+    "humidity": 95.3,
+    "pressure_hpa": 1020.67
+  },
+  {
+    "timestamp": "2025-08-12T10:02:46.601360",
+    "temperature_f": 77.5,
+    "temperature_c": 25.3,
+    "humidity": 94.6,
+    "pressure_hpa": 1020.13
+  },
+  {
+    "timestamp": "2025-08-12T10:07:52.462429",
+    "temperature_f": 77.7,
+    "temperature_c": 25.4,
+    "humidity": 94.1,
+    "pressure_hpa": 1020.15
+  },
+  {
+    "timestamp": "2025-08-12T10:12:53.230655",
+    "temperature_f": 77.7,
+    "temperature_c": 25.4,
+    "humidity": 94.1,
+    "pressure_hpa": 1020.15
+  },
+  {
+    "timestamp": "2025-08-12T10:17:54.032354",
+    "temperature_f": 77.9,
+    "temperature_c": 25.5,
+    "humidity": 94.2,
+    "pressure_hpa": 1019.89
+  },
+  {
+    "timestamp": "2025-08-12T10:22:59.869816",
+    "temperature_f": 78.1,
+    "temperature_c": 25.6,
+    "humidity": 93.8,
+    "pressure_hpa": 1019.6
+  },
+  {
+    "timestamp": "2025-08-12T10:28:00.616820",
+    "temperature_f": 78.1,
+    "temperature_c": 25.6,
+    "humidity": 93.8,
+    "pressure_hpa": 1019.89
+  },
+  {
+    "timestamp": "2025-08-12T10:33:01.375561",
+    "temperature_f": 78.3,
+    "temperature_c": 25.7,
+    "humidity": 93.9,
+    "pressure_hpa": 1020.41
+  },
+  {
+    "timestamp": "2025-08-12T10:38:02.142432",
+    "temperature_f": 78.1,
+    "temperature_c": 25.6,
+    "humidity": 93.7,
+    "pressure_hpa": 1020.15
+  },
+  {
+    "timestamp": "2025-08-12T10:43:02.899226",
+    "temperature_f": 78.3,
+    "temperature_c": 25.7,
+    "humidity": 93.8,
+    "pressure_hpa": 1019.34
+  },
+  {
+    "timestamp": "2025-08-12T10:48:06.221642",
+    "temperature_f": 78.4,
+    "temperature_c": 25.8,
+    "humidity": 93.8,
+    "pressure_hpa": 1018.52
+  },
+  {
+    "timestamp": "2025-08-12T10:53:06.962935",
+    "temperature_f": 78.4,
+    "temperature_c": 25.8,
+    "humidity": 93.8,
+    "pressure_hpa": 1018.26
+  },
+  {
+    "timestamp": "2025-08-12T10:58:07.736933",
+    "temperature_f": 78.8,
+    "temperature_c": 26.0,
+    "humidity": 93.3,
+    "pressure_hpa": 1019.08
+  },
+  {
+    "timestamp": "2025-08-12T11:03:08.504213",
+    "temperature_f": 78.8,
+    "temperature_c": 26.0,
+    "humidity": 92.4,
+    "pressure_hpa": 1019.08
+  },
+  {
+    "timestamp": "2025-08-12T11:08:09.285073",
+    "temperature_f": 78.8,
+    "temperature_c": 26.0,
+    "humidity": 92.4,
+    "pressure_hpa": 1017.44
+  },
+  {
+    "timestamp": "2025-08-12T11:13:10.066940",
+    "temperature_f": 78.8,
+    "temperature_c": 26.0,
+    "humidity": 92.4,
+    "pressure_hpa": 1019.37
+  }
+]
