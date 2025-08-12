@@ -63,8 +63,13 @@ class WeatherDashboard:
         enhanced_data["temp_trend"] = self.get_temperature_trend()
         enhanced_data["humidity_trend"] = self.get_humidity_trend()
         enhanced_data["pressure_trend"] = self.get_pressure_trend()
-        enhanced_data["predictions"] = self.predict_weather()
+        predictions = self.predict_weather()
+        enhanced_data["predictions"] = predictions
         enhanced_data["daily_summary"] = self.get_daily_summary()
+        
+        # Store predictions in InfluxDB for historical analysis
+        if predictions:
+            self.data_service.store_weather_predictions(predictions, self.current_data)
         
         return enhanced_data
     
@@ -462,6 +467,96 @@ def api_events():
     
     events = dashboard.get_recent_events(limit)
     return jsonify(events)
+
+
+@app.route("/api/analysis")
+def api_analysis():
+    """Get weather analysis for a date range"""
+    from datetime import datetime
+    import pytz
+    
+    try:
+        # Get parameters
+        start_str = request.args.get("start")
+        end_str = request.args.get("end")
+        
+        if not start_str:
+            return jsonify({"error": "start date required (YYYY-MM-DD format)"}), 400
+        
+        eastern_tz = pytz.timezone('America/New_York')
+        
+        # Parse start date
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d")
+            start_date = eastern_tz.localize(start_date)
+        except ValueError:
+            return jsonify({"error": "Invalid start date format. Use YYYY-MM-DD"}), 400
+        
+        # Parse end date (optional)
+        end_date = None
+        if end_str:
+            try:
+                end_date = datetime.strptime(end_str, "%Y-%m-%d")
+                end_date = eastern_tz.localize(end_date)
+                # Add one day to include the full end date
+                end_date = end_date + timedelta(days=1)
+            except ValueError:
+                return jsonify({"error": "Invalid end date format. Use YYYY-MM-DD"}), 400
+        
+        # Get analysis data
+        analysis = dashboard.data_service.get_weather_analysis(start_date, end_date)
+        return jsonify(analysis)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/predictions")
+def api_predictions():
+    """Get historical predictions for a date range"""
+    from datetime import datetime
+    import pytz
+    
+    try:
+        # Get parameters
+        start_str = request.args.get("start")
+        end_str = request.args.get("end")
+        
+        if not start_str:
+            return jsonify({"error": "start date required (YYYY-MM-DD format)"}), 400
+        
+        eastern_tz = pytz.timezone('America/New_York')
+        
+        # Parse start date
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d")
+            start_date = eastern_tz.localize(start_date)
+        except ValueError:
+            return jsonify({"error": "Invalid start date format. Use YYYY-MM-DD"}), 400
+        
+        # Parse end date (optional)
+        end_date = None
+        if end_str:
+            try:
+                end_date = datetime.strptime(end_str, "%Y-%m-%d")
+                end_date = eastern_tz.localize(end_date)
+                # Add one day to include the full end date
+                end_date = end_date + timedelta(days=1)
+            except ValueError:
+                return jsonify({"error": "Invalid end date format. Use YYYY-MM-DD"}), 400
+        
+        # Get predictions
+        predictions = dashboard.data_service.get_historical_predictions(start_date, end_date)
+        return jsonify(predictions)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/analysis")
+def analysis_page():
+    """Historical analysis page"""
+    return render_template("analysis.html")
 
 
 def update_data_periodically():

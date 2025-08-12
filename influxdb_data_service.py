@@ -275,8 +275,8 @@ class WeatherDataService:
             print(f"Error fetching daily summary: {e}")
             return None
     
-    def store_weather_event(self, event_type: str, intensity: str = None, notes: str = None, 
-                           current_conditions: Dict[str, Any] = None) -> bool:
+    def store_weather_event(self, event_type: str, intensity: Optional[str] = None, notes: Optional[str] = None, 
+                           current_conditions: Optional[Dict[str, Any]] = None) -> bool:
         """Store a tagged weather event in InfluxDB"""
         if not self.write_api:
             return False
@@ -376,6 +376,222 @@ class WeatherDataService:
         except Exception as e:
             print(f"Error fetching weather events: {e}")
             return []
+    
+    def store_weather_predictions(self, predictions: List[str], current_conditions: Optional[Dict[str, Any]] = None) -> bool:
+        """Store weather predictions in InfluxDB for historical analysis"""
+        if not self.write_api or not predictions:
+            return False
+        
+        try:
+            import pytz
+            eastern_tz = pytz.timezone('America/New_York')
+            timestamp = datetime.now(eastern_tz)
+            
+            # Create a single point with all predictions
+            point = Point("weather_predictions") \
+                .tag("location", "weatherbox") \
+                .tag("source", "system_generated") \
+                .field("prediction_count", len(predictions))
+            
+            # Store each prediction as a separate field
+            for i, prediction in enumerate(predictions):
+                point.field(f"prediction_{i}", prediction)
+            
+            # Add current weather conditions for later comparison
+            if current_conditions:
+                for key, value in current_conditions.items():
+                    if key != "timestamp" and value is not None:
+                        if key in ["temperature_f", "temperature_c", "humidity", "pressure_hpa"]:
+                            point.field(f"conditions_{key}", value)
+            
+            point.time(timestamp, WritePrecision.S)
+            
+            self.write_api.write(bucket=INFLUX_BUCKET, record=point)
+            return True
+            
+        except Exception as e:
+            print(f"Error storing weather predictions: {e}")
+            return False
+    
+    def get_historical_predictions(self, start_date: datetime, end_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        """Get historical predictions for a date range"""
+        if end_date is None:
+            end_date = start_date + timedelta(days=1)
+        
+        query = f'''
+        from(bucket: "{INFLUX_BUCKET}")
+          |> range(start: {start_date.isoformat()}, stop: {end_date.isoformat()})
+          |> filter(fn: (r) => r["_measurement"] == "weather_predictions")
+          |> filter(fn: (r) => r["location"] == "weatherbox")
+          |> sort(columns: ["_time"])
+        '''
+        
+        try:
+            tables = self.query_api.query(query, org=INFLUX_ORG)
+            
+            if not tables:
+                return []
+            
+            # Group predictions by timestamp
+            predictions_by_time = {}
+            
+            for table in tables:
+                for record in table.records:
+                    # Convert UTC timestamp to local time
+                    import pytz
+                    local_tz = pytz.timezone('America/New_York')
+                    timestamp_dt = record.get_time()
+                    if timestamp_dt.tzinfo is None:
+                        timestamp_dt = pytz.utc.localize(timestamp_dt)
+                    local_time = timestamp_dt.astimezone(local_tz)
+                    timestamp = local_time.isoformat()
+                    
+                    field = record.values.get("_field")
+                    value = record.values.get("_value")
+                    
+                    if timestamp not in predictions_by_time:
+                        predictions_by_time[timestamp] = {
+                            "timestamp": timestamp,
+                            "predictions": [],
+                            "conditions": {}
+                        }
+                    
+                    # Store predictions and conditions
+                    if field and field.startswith("prediction_") and isinstance(value, str):
+                        try:
+                            pred_index = int(field.replace("prediction_", ""))
+                            predictions_by_time[timestamp]["predictions"].append({
+                                "index": pred_index,
+                                "text": value
+                            })
+                        except ValueError:
+                            pass
+                    elif field and field.startswith("conditions_"):
+                        condition_name = field.replace("conditions_", "")
+                        predictions_by_time[timestamp]["conditions"][condition_name] = value
+            
+            # Sort predictions within each timestamp and convert to list
+            result = []
+            for pred_data in predictions_by_time.values():
+                # Sort predictions by index
+                pred_data["predictions"].sort(key=lambda x: x["index"])
+                pred_data["predictions"] = [p["text"] for p in pred_data["predictions"]]
+                result.append(pred_data)
+            
+            # Sort by timestamp
+            result.sort(key=lambda x: x["timestamp"])
+            return result
+            
+        except Exception as e:
+            print(f"Error fetching historical predictions: {e}")
+            return []
+    
+    def get_weather_analysis(self, start_date: datetime, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+        """Get comprehensive weather analysis for a date range"""
+        if end_date is None:
+            end_date = start_date + timedelta(days=1)
+        
+        # Get weather data
+        weather_query = f'''
+        from(bucket: "{INFLUX_BUCKET}")
+          |> range(start: {start_date.isoformat()}, stop: {end_date.isoformat()})
+          |> filter(fn: (r) => r["_measurement"] == "weather")
+          |> filter(fn: (r) => r["location"] == "weatherbox")
+          |> aggregateWindow(every: 30m, fn: mean, createEmpty: false)
+          |> sort(columns: ["_time"])
+        '''
+        
+        weather_data = self._execute_query_for_readings(weather_query)
+        
+        # Get predictions for the same period
+        predictions = self.get_historical_predictions(start_date, end_date)
+        
+        # Get tagged events
+        events_query = f'''
+        from(bucket: "{INFLUX_BUCKET}")
+          |> range(start: {start_date.isoformat()}, stop: {end_date.isoformat()})
+          |> filter(fn: (r) => r["_measurement"] == "weather_events")
+          |> filter(fn: (r) => r["location"] == "weatherbox")
+          |> sort(columns: ["_time"])
+        '''
+        
+        try:
+            tables = self.query_api.query(events_query, org=INFLUX_ORG)
+            events = []
+            
+            if tables:
+                events_by_time = {}
+                for table in tables:
+                    for record in table.records:
+                        # Convert timestamp to local time
+                        import pytz
+                        local_tz = pytz.timezone('America/New_York')
+                        timestamp_dt = record.get_time()
+                        if timestamp_dt.tzinfo is None:
+                            timestamp_dt = pytz.utc.localize(timestamp_dt)
+                        local_time = timestamp_dt.astimezone(local_tz)
+                        timestamp = local_time.isoformat()
+                        
+                        if timestamp not in events_by_time:
+                            events_by_time[timestamp] = {
+                                "timestamp": timestamp,
+                                "event_type": record.values.get("event_type"),
+                                "intensity": record.values.get("intensity")
+                            }
+                
+                events = list(events_by_time.values())
+                events.sort(key=lambda x: x["timestamp"])
+        
+        except Exception as e:
+            print(f"Error fetching events: {e}")
+            events = []
+        
+        return {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "weather_data": weather_data,
+            "predictions": predictions,
+            "events": events,
+            "summary": self._generate_period_summary(weather_data, predictions, events)
+        }
+    
+    def _generate_period_summary(self, weather_data: List[Dict[str, Any]], predictions: List[Dict[str, Any]], events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate summary statistics for a period"""
+        if not weather_data:
+            return {}
+        
+        temps = [r["temperature_f"] for r in weather_data if "temperature_f" in r]
+        humidities = [r["humidity"] for r in weather_data if "humidity" in r]
+        pressures = [r["pressure_hpa"] for r in weather_data if "pressure_hpa" in r]
+        
+        summary = {
+            "reading_count": len(weather_data),
+            "prediction_count": len(predictions),
+            "event_count": len(events)
+        }
+        
+        if temps:
+            summary.update({
+                "temp_high": max(temps),
+                "temp_low": min(temps),
+                "temp_avg": sum(temps) / len(temps)
+            })
+        
+        if humidities:
+            summary.update({
+                "humidity_high": max(humidities),
+                "humidity_low": min(humidities),
+                "humidity_avg": sum(humidities) / len(humidities)
+            })
+        
+        if pressures:
+            summary.update({
+                "pressure_high": max(pressures),
+                "pressure_low": min(pressures),
+                "pressure_avg": sum(pressures) / len(pressures)
+            })
+        
+        return summary
     
     def close(self):
         """Close the InfluxDB connection"""
