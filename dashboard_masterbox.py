@@ -14,6 +14,34 @@ from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 from influxdb_data_service import WeatherDataService
 
+# Seasonal fog probability for Smyrna, GA (30080) humid subtropical climate
+FOG_SEASONAL_PROBABILITY = {
+    'winter': {  # Dec-Feb
+        'overnight': 0.25,  # 12am-6am
+        'morning': 0.30,    # 6am-10am
+        'midday': 0.02,     # 10am-3pm
+        'evening': 0.08     # 3pm-12am
+    },
+    'spring': {  # Mar-May
+        'overnight': 0.20,
+        'morning': 0.25,
+        'midday': 0.01,
+        'evening': 0.05
+    },
+    'summer': {  # Jun-Aug
+        'overnight': 0.15,
+        'morning': 0.20,
+        'midday': 0.001,    # Almost never
+        'evening': 0.03
+    },
+    'fall': {  # Sep-Nov
+        'overnight': 0.22,
+        'morning': 0.28,
+        'midday': 0.02,
+        'evening': 0.07
+    }
+}
+
 
 class WeatherDashboard:
     """Weather dashboard that reads data from InfluxDB"""
@@ -63,6 +91,19 @@ class WeatherDashboard:
         enhanced_data["temp_trend"] = self.get_temperature_trend()
         enhanced_data["humidity_trend"] = self.get_humidity_trend()
         enhanced_data["pressure_trend"] = self.get_pressure_trend()
+        
+        # Calculate feels like temperature and comfort descriptions
+        if "temperature_f" in self.current_data and "humidity" in self.current_data:
+            feels_like = self.calculate_feels_like(
+                self.current_data["temperature_f"], 
+                self.current_data["humidity"]
+            )
+            enhanced_data["feels_like_f"] = feels_like
+            enhanced_data["comfort_descriptions"] = self.get_comfort_description(
+                feels_like, 
+                self.current_data["humidity"]
+            )
+        
         predictions = self.predict_weather()
         enhanced_data["predictions"] = predictions
         enhanced_data["daily_summary"] = self.get_daily_summary()
@@ -113,12 +154,12 @@ class WeatherDashboard:
         else:
             return f"Stable ({humidity_change:+.1f}%)"
     
-    def get_pressure_trend(self, hours=3):
+    def get_pressure_trend(self, hours=1):
         """Enhanced pressure trend analysis"""
         recent_readings = self.data_service.get_recent_data(hours=hours)
         recent_with_pressure = [r for r in recent_readings if "pressure_hpa" in r]
         
-        if len(recent_with_pressure) < 6:
+        if len(recent_with_pressure) < 2:  # Reduced from 6 to 2
             return "Insufficient pressure data"
         
         # Calculate pressure change over the time period
@@ -142,16 +183,308 @@ class WeatherDashboard:
         else:
             return f"Stable ({pressure_change:+.1f} hPa in {hours:.0f}h)"
     
-    def predict_weather(self):
-        """Enhanced weather predictions using temperature, humidity, and pressure"""
+    def calculate_feels_like(self, temp_f, humidity, wind_mph=0):
+        """Calculate 'feels like' temperature based on conditions"""
+        temp_c = (temp_f - 32) * 5/9
+        
+        # Hot weather: Use Heat Index
+        if temp_f >= 80 and humidity >= 40:
+            return self.heat_index(temp_f, humidity)
+        
+        # Cold weather with wind: Use Wind Chill
+        elif temp_f <= 50 and wind_mph >= 3:
+            return self.wind_chill(temp_f, wind_mph)
+        
+        # Moderate conditions: Use simplified apparent temperature
+        else:
+            return self.apparent_temperature(temp_c, humidity, wind_mph * 0.44704)  # mph to m/s
+
+    def heat_index(self, temp_f, humidity):
+        """Calculate heat index for hot, humid conditions"""
+        if temp_f < 80 or humidity < 40:
+            return temp_f
+        
+        # Full Rothfusz regression equation
+        hi = -42.379 + 2.04901523*temp_f + 10.14333127*humidity
+        hi += -0.22475541*temp_f*humidity - 6.83783e-3*temp_f**2
+        hi += -5.481717e-2*humidity**2 + 1.22874e-3*temp_f**2*humidity
+        hi += 8.5282e-4*temp_f*humidity**2 - 1.99e-6*temp_f**2*humidity**2
+        
+        # Adjustments for extreme conditions
+        if humidity < 13 and 80 <= temp_f <= 112:
+            hi -= ((13-humidity)/4) * math.sqrt((17-abs(temp_f-95.))/17)
+        elif humidity > 85 and 80 <= temp_f <= 87:
+            hi += ((humidity-85)/10) * ((87-temp_f)/5)
+        
+        return round(hi, 1)
+
+    def wind_chill(self, temp_f, wind_mph):
+        """Calculate wind chill for cold, windy conditions"""
+        if temp_f > 50 or wind_mph < 3:
+            return temp_f
+        
+        wc = 35.74 + 0.6215*temp_f - 35.75*(wind_mph**0.16)
+        wc += 0.4275*temp_f*(wind_mph**0.16)
+        
+        return round(wc, 1)
+
+    def apparent_temperature(self, temp_c, humidity, wind_ms):
+        """Calculate apparent temperature for moderate conditions"""
+        # Vapor pressure in hPa
+        e = (humidity/100) * 6.105 * math.exp(17.27*temp_c/(237.7+temp_c))
+        
+        # Apparent temperature
+        at = temp_c + 0.33*e - 0.7*wind_ms - 4.0
+        
+        # Convert back to Fahrenheit
+        return round(at * 9/5 + 32, 1)
+
+    def get_comfort_description(self, feels_like, humidity):
+        """Provide human-readable comfort description"""
+        descriptions = []
+        
+        if feels_like < 32:
+            descriptions.append("❄️ Freezing conditions")
+        elif feels_like < 50:
+            descriptions.append("🧥 Cold - dress warmly")
+        elif feels_like < 65:
+            descriptions.append("🧤 Cool - light jacket recommended")
+        elif 65 <= feels_like <= 75:
+            descriptions.append("😌 Comfortable conditions")
+        elif feels_like <= 80:
+            descriptions.append("☀️ Warm and pleasant")
+        elif feels_like <= 90:
+            descriptions.append("🌡️ Hot - seek shade")
+        elif feels_like <= 105:
+            descriptions.append("🥵 Very hot - limit outdoor activity")
+        else:
+            descriptions.append("🚨 Dangerous heat - stay indoors")
+        
+        # Humidity comfort
+        if humidity > 70:
+            descriptions.append("💧 High humidity - feels muggy")
+        elif humidity < 30:
+            descriptions.append("🏜️ Low humidity - may feel dry")
+        
+        return descriptions
+    
+    def detect_current_conditions(self):
+        """Detect current weather conditions based on sensor readings"""
         if not self.current_data:
-            return ["No current data available"]
+            return []
         
         temp_f = self.current_data.get("temperature_f", 0)
         humidity = self.current_data.get("humidity", 0)
         pressure = self.current_data.get("pressure_hpa")
         
+        current_conditions = []
+        
+        # ACTIVE PRECIPITATION DETECTION
+        if humidity > 85:
+            if humidity > 95:
+                current_conditions.append("🌧️ HEAVY PRECIPITATION LIKELY - Humidity near saturation")
+            else:
+                current_conditions.append("🌦️ LIGHT PRECIPITATION POSSIBLE - Very high humidity")
+        
+        # THUNDERSTORM CONDITIONS  
+        if temp_f > 70 and humidity > 75:
+            temp_c = (temp_f - 32) * 5/9
+            try:
+                # Calculate dew point
+                a, b = 17.27, 237.7
+                alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
+                dew_point_c = (b * alpha) / (a - alpha)
+                dew_point_f = (dew_point_c * 9/5) + 32
+                temp_dew_spread = temp_f - dew_point_f
+                
+                if temp_dew_spread < 5:
+                    current_conditions.append("⛈️ THUNDERSTORM CONDITIONS - Very unstable atmosphere")
+                elif temp_dew_spread < 10:
+                    current_conditions.append("⚡ THUNDERSTORM POSSIBLE - Moderate instability")
+            except:
+                pass
+        
+        # PRESSURE VOLATILITY (indicates active weather)
+        recent_readings = self.data_service.get_recent_data(minutes=30)
+        if len(recent_readings) >= 3:
+            pressure_values = [r.get("pressure_hpa") for r in recent_readings if r.get("pressure_hpa") is not None]
+            if len(pressure_values) >= 3:
+                pressure_range = max(pressure_values) - min(pressure_values)
+                if pressure_range > 2:
+                    current_conditions.append("🌪️ PRESSURE VOLATILITY - Active weather system present")
+        
+        return current_conditions
+
+    def predict_fog(self):
+        """Enhanced fog prediction for Smyrna, GA climate"""
+        if not self.current_data:
+            return None
+        
+        # Current conditions
+        temp_f = self.current_data.get('temperature_f', 0)
+        humidity = self.current_data.get('humidity', 0)
+        pressure = self.current_data.get('pressure_hpa')
+        
+        # Convert to Celsius for dew point calculation
+        temp_c = (temp_f - 32) * 5/9
+        
+        # Calculate dew point using Magnus formula
+        a = 17.27
+        b = 237.7
+        alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
+        dewpoint_c = (b * alpha) / (a - alpha)
+        dewpoint_f = (dewpoint_c * 9/5) + 32
+        
+        # Temperature-dewpoint spread
+        temp_dewpoint_spread = temp_f - dewpoint_f
+        
+        # Get time-based factors
+        current_hour = datetime.now().hour
+        current_month = datetime.now().month
+        
+        # Determine season
+        if current_month in [12, 1, 2]:
+            season = 'winter'
+        elif current_month in [3, 4, 5]:
+            season = 'spring'
+        elif current_month in [6, 7, 8]:
+            season = 'summer'
+        else:
+            season = 'fall'
+        
+        # Determine time period
+        if 0 <= current_hour < 6:
+            time_period = 'overnight'
+        elif 6 <= current_hour < 10:
+            time_period = 'morning'
+        elif 10 <= current_hour < 15:
+            time_period = 'midday'
+        else:
+            time_period = 'evening'
+        
+        # Base seasonal probability
+        base_probability = FOG_SEASONAL_PROBABILITY[season][time_period]
+        
+        # Fog likelihood factors
+        fog_score = 0
+        fog_conditions = []
+        
+        # Temperature-dewpoint spread (most critical factor)
+        if temp_dewpoint_spread <= 2:
+            fog_score += 40
+            fog_conditions.append(f"Dew point very close ({temp_dewpoint_spread:.1f}°F spread)")
+        elif temp_dewpoint_spread <= 4:
+            fog_score += 20
+            fog_conditions.append(f"Dew point close ({temp_dewpoint_spread:.1f}°F spread)")
+        elif temp_dewpoint_spread <= 6:
+            fog_score += 5
+        
+        # Humidity thresholds (adjusted for humid climate)
+        if humidity >= 95:
+            fog_score += 30
+            fog_conditions.append("Very high humidity")
+        elif humidity >= 90:
+            fog_score += 15
+        elif humidity >= 85:
+            fog_score += 5
+        
+        # Pressure conditions
+        if pressure and 1015 <= pressure <= 1025:
+            fog_score += 10  # High pressure systems favor radiation fog
+            fog_conditions.append("Stable high pressure")
+        
+        # Temperature conditions for Smyrna
+        if season == 'summer':
+            # Summer fog is rare during day, mostly early morning
+            if time_period == 'morning' and 65 <= temp_f <= 75:
+                fog_score += 15
+                fog_conditions.append("Ideal morning fog temperature")
+            elif time_period == 'midday' or time_period == 'evening':
+                fog_score -= 30  # Strong negative for summer midday/evening
+        else:
+            # Fall/Winter/Spring fog temperature ranges
+            if 35 <= temp_f <= 55:
+                fog_score += 10
+                fog_conditions.append("Favorable fog temperature range")
+        
+        # Wind conditions (need to add wind sensor for this)
+        # For now, assume calm conditions if pressure is stable
+        if pressure:
+            pressure_trend = self.get_pressure_trend(hours=1)
+            if "Stable" in pressure_trend:
+                fog_score += 5
+                fog_conditions.append("Likely calm conditions")
+        
+        # Recent rain check (increases fog probability)
+        # Check if humidity increased significantly in last 6 hours
+        humidity_trend = self.get_humidity_trend(hours=6)
+        if "Rising" in humidity_trend and "rapidly" in humidity_trend.lower():
+            fog_score += 10
+            fog_conditions.append("Recent moisture increase")
+        
+        # Apply seasonal and time modifiers
+        fog_score *= base_probability
+        
+        # Summer daytime penalty (aggressive reduction)
+        if season == 'summer' and time_period in ['midday', 'evening']:
+            fog_score *= 0.1  # 90% reduction
+        
+        # Calculate final probability
+        fog_probability = min(fog_score, 95)  # Cap at 95%
+        
+        # Generate prediction message
+        if fog_probability >= 70:
+            severity = "Very likely"
+            icon = "🌫️"
+        elif fog_probability >= 40:
+            severity = "Likely"
+            icon = "🌁"
+        elif fog_probability >= 20:
+            severity = "Possible"
+            icon = "🌫️"
+        else:
+            return None  # Don't report low probability fog
+        
+        # Build detailed message
+        message = f"{icon} Fog {severity} ({fog_probability:.0f}% chance)"
+        
+        if fog_conditions:
+            message += f" - {', '.join(fog_conditions[:2])}"  # Limit to 2 conditions
+        
+        # Add time-specific guidance
+        if time_period == 'evening' and fog_probability >= 40:
+            message += " - Developing overnight"
+        elif time_period == 'overnight' and fog_probability >= 40:
+            message += " - Through early morning"
+        elif time_period == 'morning' and fog_probability >= 40:
+            message += " - Clearing by mid-morning"
+        
+        return {
+            'prediction': message,
+            'probability': fog_probability,
+            'dewpoint_f': dewpoint_f,
+            'temp_spread': temp_dewpoint_spread,
+            'conditions': fog_conditions
+        }
+
+    def predict_weather(self):
+        """Enhanced weather predictions with current condition detection"""
+        if not self.current_data:
+            return ["No current data available"]
+        
         predictions = []
+        
+        # FIRST: Check what's happening RIGHT NOW
+        current_conditions = self.detect_current_conditions()
+        if current_conditions:
+            predictions.extend(current_conditions)
+            predictions.append("---")  # Separator
+        
+        # THEN: Add traditional forecasting
+        temp_f = self.current_data.get("temperature_f", 0)
+        humidity = self.current_data.get("humidity", 0)
+        pressure = self.current_data.get("pressure_hpa")
+        
         confidence_scores = {}
         
         # Calculate dew point for fog prediction
@@ -207,7 +540,7 @@ class WeatherDashboard:
                 predictions.append("🌤️ Fair weather expected")
                 confidence_scores["fair"] = 80
             
-            # Pressure trend predictions
+            # Pressure trend predictions with storm clearing detection
             if pressure_change_rate < -3:
                 predictions.append(
                     f"⚠️ Pressure falling rapidly ({pressure_change_rate:.1f} hPa/hr) - weather deteriorating within 2-4 hours"
@@ -219,10 +552,23 @@ class WeatherDashboard:
                 )
                 confidence_scores["change"] = 70
             elif pressure_change_rate > 2:
-                predictions.append(
-                    f"📈 Pressure rising rapidly ({pressure_change_rate:.1f} hPa/hr) - clearing conditions"
-                )
-                confidence_scores["clearing"] = 80
+                # Enhanced storm clearing detection
+                if humidity > 80:
+                    predictions.append(
+                        f"🌤️ STORM CLEARING - Pressure rising rapidly ({pressure_change_rate:.1f} hPa/hr) after high humidity"
+                    )
+                    confidence_scores["storm_clearing"] = 90
+                else:
+                    predictions.append(
+                        f"📈 Pressure rising rapidly ({pressure_change_rate:.1f} hPa/hr) - clearing conditions"
+                    )
+                    confidence_scores["clearing"] = 80
+            elif pressure_change_rate > 1:
+                if humidity > 75:
+                    predictions.append(
+                        f"🌤️ Weather improving - Pressure rising ({pressure_change_rate:.1f} hPa/hr) as moisture decreases"
+                    )
+                    confidence_scores["improving"] = 75
             
             # Thunderstorm prediction
             if (temp_f > 75 and humidity > 65 and pressure < 1015 and pressure_change_rate < -1):
@@ -240,15 +586,11 @@ class WeatherDashboard:
                     predictions.append("🌨️ Wintry mix possible (rain/sleet/snow)")
                     confidence_scores["winter_mix"] = 65
         
-        # Fog prediction
-        dew_point_spread = temp_f - dew_point_f
-        if dew_point_spread < 5 and humidity > 85:
-            if dew_point_spread < 2:
-                predictions.append("🌫️ Dense fog likely - visibility under 1/4 mile")
-                confidence_scores["fog"] = 90
-            else:
-                predictions.append("🌁 Fog forming - reduced visibility")
-                confidence_scores["fog"] = 70
+        # Enhanced fog prediction using climatological data
+        fog_prediction = self.predict_fog()
+        if fog_prediction:
+            predictions.append(fog_prediction['prediction'])
+            confidence_scores["fog"] = fog_prediction['probability']
         
         # Heat index
         if temp_f > 80:
@@ -402,8 +744,15 @@ def api_history():
 
 @app.route("/api/history/pressure")
 def api_pressure_history():
-    """Get pressure trend data for last 24 hours"""
-    pressure_data = dashboard.data_service.get_pressure_history(hours=24)
+    """Get pressure trend data for specified hours (default 24)"""
+    try:
+        hours = int(request.args.get("hours", "24"))
+        # Limit to reasonable range
+        hours = max(1, min(hours, 168))  # 1 hour to 1 week
+    except ValueError:
+        hours = 24
+    
+    pressure_data = dashboard.data_service.get_pressure_history(hours=hours)
     return jsonify(pressure_data)
 
 

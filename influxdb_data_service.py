@@ -4,6 +4,7 @@ Provides data access methods for the dashboard running on masterbox
 """
 
 import math
+import pytz
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -115,7 +116,6 @@ class WeatherDataService:
           |> range(start: {time_range})
           |> filter(fn: (r) => r["_measurement"] == "weather")
           |> filter(fn: (r) => r["location"] == "weatherbox")
-          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
           |> sort(columns: ["_time"])
         '''
         
@@ -269,6 +269,17 @@ class WeatherDataService:
                 summary["pressure_low"] = min(pressures)
                 summary["pressure_current"] = pressures[-1]  # Last reading
             
+            # Calculate feels like high and low
+            feels_like_temps = []
+            for reading in readings:
+                if "temperature_f" in reading and "humidity" in reading:
+                    feels_like = self._calculate_feels_like(reading["temperature_f"], reading["humidity"])
+                    feels_like_temps.append(feels_like)
+            
+            if feels_like_temps:
+                summary["feels_like_high"] = max(feels_like_temps)
+                summary["feels_like_low"] = min(feels_like_temps)
+            
             return summary
             
         except Exception as e:
@@ -282,7 +293,9 @@ class WeatherDataService:
             return False
         
         try:
-            timestamp = datetime.now()
+            # Use local timezone for the timestamp
+            local_tz = pytz.timezone('America/New_York')
+            timestamp = datetime.now(local_tz)
             
             # Create the main event point
             point = Point("weather_events") \
@@ -592,6 +605,62 @@ class WeatherDataService:
             })
         
         return summary
+    
+    def _calculate_feels_like(self, temp_f, humidity, wind_mph=0):
+        """Calculate 'feels like' temperature based on conditions"""
+        temp_c = (temp_f - 32) * 5/9
+        
+        # Hot weather: Use Heat Index
+        if temp_f >= 80 and humidity >= 40:
+            return self._heat_index(temp_f, humidity)
+        
+        # Cold weather with wind: Use Wind Chill
+        elif temp_f <= 50 and wind_mph >= 3:
+            return self._wind_chill(temp_f, wind_mph)
+        
+        # Moderate conditions: Use simplified apparent temperature
+        else:
+            return self._apparent_temperature(temp_c, humidity, wind_mph * 0.44704)  # mph to m/s
+
+    def _heat_index(self, temp_f, humidity):
+        """Calculate heat index for hot, humid conditions"""
+        if temp_f < 80 or humidity < 40:
+            return temp_f
+        
+        # Full Rothfusz regression equation
+        hi = -42.379 + 2.04901523*temp_f + 10.14333127*humidity
+        hi += -0.22475541*temp_f*humidity - 6.83783e-3*temp_f**2
+        hi += -5.481717e-2*humidity**2 + 1.22874e-3*temp_f**2*humidity
+        hi += 8.5282e-4*temp_f*humidity**2 - 1.99e-6*temp_f**2*humidity**2
+        
+        # Adjustments for extreme conditions
+        if humidity < 13 and 80 <= temp_f <= 112:
+            hi -= ((13-humidity)/4) * math.sqrt((17-abs(temp_f-95.))/17)
+        elif humidity > 85 and 80 <= temp_f <= 87:
+            hi += ((humidity-85)/10) * ((87-temp_f)/5)
+        
+        return round(hi, 1)
+
+    def _wind_chill(self, temp_f, wind_mph):
+        """Calculate wind chill for cold, windy conditions"""
+        if temp_f > 50 or wind_mph < 3:
+            return temp_f
+        
+        wc = 35.74 + 0.6215*temp_f - 35.75*(wind_mph**0.16)
+        wc += 0.4275*temp_f*(wind_mph**0.16)
+        
+        return round(wc, 1)
+
+    def _apparent_temperature(self, temp_c, humidity, wind_ms):
+        """Calculate apparent temperature for moderate conditions"""
+        # Vapor pressure in hPa
+        e = (humidity/100) * 6.105 * math.exp(17.27*temp_c/(237.7+temp_c))
+        
+        # Apparent temperature
+        at = temp_c + 0.33*e - 0.7*wind_ms - 4.0
+        
+        # Convert back to Fahrenheit
+        return round(at * 9/5 + 32, 1)
     
     def close(self):
         """Close the InfluxDB connection"""

@@ -128,7 +128,7 @@
         }
         
         .predictions {
-            max-height: 300px;
+            max-height: 600px;
             overflow-y: auto;
             min-height: 50px;
         }
@@ -260,6 +260,35 @@
             margin-top: 10px;
         }
         
+        .chart-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #718096;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            color: #4299e1;
+            background: rgba(66, 153, 225, 0.1);
+        }
+        
+        .tab-btn.active {
+            color: #4299e1;
+            border-bottom-color: #4299e1;
+            font-weight: bold;
+        }
+        
         /* Mobile-first responsive design */
         @media (max-width: 480px) {
             .container {
@@ -359,6 +388,11 @@
             textarea {
                 font-size: 14px;
                 min-height: 50px !important;
+            }
+            
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
             }
         }
         
@@ -497,6 +531,13 @@
             </div>
             
             <div class="card current-reading">
+                <h2>🌤️ Feels Like</h2>
+                <div id="feels-like" class="reading-value">--°F</div>
+                <div class="reading-label">Apparent Temperature</div>
+                <div id="comfort-descriptions" class="trend">Loading...</div>
+            </div>
+            
+            <div class="card current-reading">
                 <h2>🌡️ Barometric Pressure</h2>
                 <div id="pressure" class="reading-value">-- hPa</div>
                 <div class="reading-label">Current Pressure</div>
@@ -533,6 +574,14 @@
                     <div class="summary-item">
                         <div id="pressure-low" class="summary-value">-- hPa</div>
                         <div class="summary-label">Low Pressure</div>
+                    </div>
+                    <div class="summary-item">
+                        <div id="feels-like-high" class="summary-value">--°F</div>
+                        <div class="summary-label">High Feels Like</div>
+                    </div>
+                    <div class="summary-item">
+                        <div id="feels-like-low" class="summary-value">--°F</div>
+                        <div class="summary-label">Low Feels Like</div>
                     </div>
                 </div>
             </div>
@@ -578,7 +627,12 @@
             </div>
             
             <div class="card chart-container">
-                <h2>📊 Pressure Trends (24 Hours)</h2>
+                <h2>📊 Pressure Trends</h2>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchPressureRange('1h')">1 Hour</button>
+                    <button class="tab-btn" onclick="switchPressureRange('12h')">12 Hours</button>
+                    <button class="tab-btn" onclick="switchPressureRange('24h')">24 Hours</button>
+                </div>
                 <canvas id="pressureChart"></canvas>
             </div>
             
@@ -598,6 +652,7 @@
         let pressureChart;
         let weekChart;
         let socket;
+        let currentPressureRange = '1h';
         
         function initCharts() {
             // Initialize 24-hour weather chart
@@ -612,14 +667,30 @@
                             data: [],
                             borderColor: '#e53e3e',
                             backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
                         },
                         {
                             label: 'Humidity (%)',
                             data: [],
                             borderColor: '#3182ce',
                             backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
+                        },
+                        {
+                            label: 'Pressure (hPa)',
+                            data: [],
+                            borderColor: '#38a169',
+                            backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
                         }
                     ]
                 },
@@ -659,6 +730,11 @@
                             grid: {
                                 drawOnChartArea: false,
                             },
+                        },
+                        y2: {
+                            type: 'linear',
+                            display: false,
+                            position: 'right',
                         }
                     }
                 }
@@ -676,7 +752,35 @@
                             data: [],
                             borderColor: '#38a169',
                             backgroundColor: 'rgba(56, 161, 105, 0.1)',
-                            fill: true
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
+                        }
+                        ,
+                        {
+                            label: 'Sea level (1013.25 hPa)',
+                            data: [],
+                            borderColor: '#718096',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            borderWidth: 1.5,
+                            borderDash: [6, 6]
+                        },
+                        {
+                            label: 'Trend Line',
+                            data: [],
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            borderWidth: 2,
+                            borderDash: [3, 3]
                         }
                     ]
                 },
@@ -697,26 +801,9 @@
                             title: {
                                 display: true,
                                 text: 'Pressure (hPa)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 1013.25,
-                                    yMax: 1013.25,
-                                    borderColor: '#718096',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: 'Sea Level (1013.25 hPa)',
-                                        enabled: true,
-                                        position: 'end'
-                                    }
-                                }
-                            }
+                            },
+                            min: 980, // Dynamic range: 980-1050 hPa
+                            max: 1050, // Dynamic range: 980-1050 hPa
                         }
                     }
                 }
@@ -734,21 +821,30 @@
                             data: [],
                             borderColor: '#e53e3e',
                             backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         },
                         {
                             label: 'Humidity (%)',
                             data: [],
                             borderColor: '#3182ce',
                             backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         },
                         {
                             label: 'Pressure (hPa)',
                             data: [],
                             borderColor: '#38a169',
                             backgroundColor: 'rgba(56, 161, 105, 0.1)',
-                            yAxisID: 'y2'
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         }
                     ]
                 },
@@ -827,6 +923,19 @@
                 document.getElementById('pressure-status').className = 'pressure-status';
             }
             
+            // Update feels like temperature and comfort descriptions
+            if (data.feels_like_f !== null && data.feels_like_f !== undefined) {
+                document.getElementById('feels-like').textContent = `${data.feels_like_f}°F`;
+                if (data.comfort_descriptions && data.comfort_descriptions.length > 0) {
+                    document.getElementById('comfort-descriptions').textContent = data.comfort_descriptions.join(' • ');
+                } else {
+                    document.getElementById('comfort-descriptions').textContent = 'Moderate conditions';
+                }
+            } else {
+                document.getElementById('feels-like').textContent = 'N/A';
+                document.getElementById('comfort-descriptions').textContent = 'No data';
+            }
+            
             document.getElementById('temp-trend').textContent = data.temp_trend || 'No trend data';
             document.getElementById('humidity-trend').textContent = data.humidity_trend || 'No trend data';
             document.getElementById('pressure-trend').textContent = data.pressure_trend || 'No pressure data';
@@ -847,6 +956,15 @@
                 } else {
                     document.getElementById('pressure-high').textContent = 'N/A';
                     document.getElementById('pressure-low').textContent = 'N/A';
+                }
+                
+                // Update feels like summary if available
+                if (summary.feels_like_high !== undefined) {
+                    document.getElementById('feels-like-high').textContent = `${summary.feels_like_high}°F`;
+                    document.getElementById('feels-like-low').textContent = `${summary.feels_like_low}°F`;
+                } else {
+                    document.getElementById('feels-like-high').textContent = 'N/A';
+                    document.getElementById('feels-like-low').textContent = 'N/A';
                 }
             }
             
@@ -876,16 +994,67 @@
             }
         }
         
+        function smoothData(data, windowSize = 3) {
+            if (!data || data.length < windowSize) return data;
+            
+            const smoothed = [];
+            for (let i = 0; i < data.length; i++) {
+                const start = Math.max(0, i - Math.floor(windowSize / 2));
+                const end = Math.min(data.length, i + Math.ceil(windowSize / 2));
+                const window = data.slice(start, end);
+                const validValues = window.filter(val => val !== null && val !== undefined && !isNaN(val));
+                if (validValues.length === 0) {
+                    smoothed.push(data[i]);
+                } else {
+                    const avg = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
+                    smoothed.push(avg);
+                }
+            }
+            return smoothed;
+        }
+        
+        function calculateTrendLine(data) {
+            // Calculate linear regression for trend line
+            if (!data || data.length < 2) return [];
+            
+            const n = data.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const x = i;
+                const y = data[i];
+                if (y !== null && y !== undefined && !isNaN(y)) {
+                    sumX += x;
+                    sumY += y;
+                    sumXY += x * y;
+                    sumXX += x * x;
+                }
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            // Generate trend line points
+            const trendLine = [];
+            for (let i = 0; i < n; i++) {
+                trendLine.push(slope * i + intercept);
+            }
+            
+            return trendLine;
+        }
+        
         function updateChart(historyData) {
             if (!historyData || historyData.length === 0) return;
             
             const labels = historyData.map(d => formatTime(d.timestamp));
-            const temperatures = historyData.map(d => d.temperature_f);
-            const humidities = historyData.map(d => d.humidity);
+            const temperatures = smoothData(historyData.map(d => d.temperature_f), 5);
+            const humidities = smoothData(historyData.map(d => d.humidity), 5);
+            const pressures = smoothData(historyData.map(d => d.pressure_hpa || null), 5);
             
             weatherChart.data.labels = labels;
             weatherChart.data.datasets[0].data = temperatures;
             weatherChart.data.datasets[1].data = humidities;
+            weatherChart.data.datasets[2].data = pressures;
             weatherChart.update();
         }
         
@@ -893,11 +1062,52 @@
             if (!pressureData || pressureData.length === 0) return;
             
             const labels = pressureData.map(d => formatTime(d.timestamp));
-            const pressures = pressureData.map(d => d.pressure_hpa);
+            const pressures = smoothData(pressureData.map(d => d.pressure_hpa), 3);
             
             pressureChart.data.labels = labels;
             pressureChart.data.datasets[0].data = pressures;
+            // Keep a constant sea-level reference line matching label length
+            pressureChart.data.datasets[1].data = new Array(labels.length).fill(1013.25);
+            
+            // Calculate and add normalized trend line
+            if (pressures.length > 2) {
+                const trendLine = calculateTrendLine(pressures);
+                pressureChart.data.datasets[2].data = trendLine;
+            } else {
+                pressureChart.data.datasets[2].data = [];
+            }
+            
+            // Calculate dynamic min/max from actual data with padding
+            if (pressures.length > 0) {
+                const minPressure = Math.min(...pressures);
+                const maxPressure = Math.max(...pressures);
+                const padding = (maxPressure - minPressure) * 0.1; // 10% padding
+                
+                pressureChart.options.scales.y.min = Math.max(minPressure - padding, 980); // Don't go below 980
+                pressureChart.options.scales.y.max = Math.min(maxPressure + padding, 1050); // Don't go above 1050
+            }
+            
             pressureChart.update();
+        }
+        
+        async function switchPressureRange(range) {
+            // Update active tab
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            currentPressureRange = range;
+            
+            // Fetch new data for the selected range
+            try {
+                let url = `/api/history/pressure?hours=${range === '1h' ? 1 : range === '12h' ? 12 : 24}`;
+                const response = await fetch(url);
+                if (response.ok) {
+                    const pressureData = await response.json();
+                    updatePressureChart(pressureData);
+                }
+            } catch (error) {
+                console.error('Error fetching pressure data:', error);
+            }
         }
         
         function updateWeekChart(weekData) {
@@ -907,9 +1117,9 @@
                 const date = new Date(d.timestamp);
                 return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             });
-            const temperatures = weekData.map(d => d.temperature_f);
-            const humidities = weekData.map(d => d.humidity);
-            const pressures = weekData.map(d => d.pressure_hpa || null);
+            const temperatures = smoothData(weekData.map(d => d.temperature_f), 7);
+            const humidities = smoothData(weekData.map(d => d.humidity), 7);
+            const pressures = smoothData(weekData.map(d => d.pressure_hpa || null), 5);
             
             weekChart.data.labels = labels;
             weekChart.data.datasets[0].data = temperatures;
@@ -943,8 +1153,9 @@
                     updateChart(data24h);
                 }
                 
-                // Fetch pressure trend data
-                const responsePressure = await fetch('/api/history/pressure');
+                // Fetch pressure trend data based on current range
+                const hours = currentPressureRange === '1h' ? 1 : currentPressureRange === '12h' ? 12 : 24;
+                const responsePressure = await fetch(`/api/history/pressure?hours=${hours}`);
                 if (responsePressure.ok) {
                     const pressureData = await responsePressure.json();
                     updatePressureChart(pressureData);
