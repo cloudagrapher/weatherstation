@@ -9,8 +9,8 @@ backlog = 2048
 workers = 1  # Use only 1 worker for Flask-SocketIO compatibility
 worker_class = "eventlet"  # Required for WebSocket support
 worker_connections = 1000
-timeout = 30
-keepalive = 2
+timeout = 120  # Increased for WebSocket connections
+keepalive = 5
 
 # Restart workers after this many requests, to prevent memory leaks
 max_requests = 1000

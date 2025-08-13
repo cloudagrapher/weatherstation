@@ -9,13 +9,20 @@ import json
 import math
 import threading
 import time
+import os
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request
+from functools import wraps
+from flask import Flask, render_template, jsonify, request, session, redirect
 from flask_socketio import SocketIO, emit
 from .influxdb_data_service import WeatherDataService
 from .weather_api_service import WeatherAPIService
+import requests
 
 # Seasonal fog probability for Smyrna, GA (30080) humid subtropical climate
+# Configuration
+AUTHELIA_URL = "https://authelia.cloudagrapher.com"
+WEATHER_URL = "https://weather.cloudagrapher.com"
+
 FOG_SEASONAL_PROBABILITY = {
     "winter": {  # Dec-Feb
         "overnight": 0.25,  # 12am-6am
@@ -42,6 +49,88 @@ FOG_SEASONAL_PROBABILITY = {
         "evening": 0.07,
     },
 }
+
+
+def require_auth(f):
+    """
+    Decorator to require authentication for specific endpoints.
+    Uses redirect-based auth instead of forward auth headers.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if user is authenticated via session
+        if 'authenticated_user' in session:
+            # User is logged in, continue
+            return f(*args, **kwargs)
+        
+        # Check if this is a callback from Authelia
+        if request.args.get('auth_user'):
+            # Verify the auth with Authelia's verify endpoint
+            try:
+                verify_url = f"{AUTHELIA_URL}/api/verify"
+                response = requests.get(verify_url, 
+                    cookies=request.cookies,
+                    headers={'X-Original-URL': request.url},
+                    timeout=5
+                )
+                
+                if response.status_code == 200:
+                    # Authentication successful
+                    user_info = {
+                        'username': request.args.get('auth_user'),
+                        'display_name': request.args.get('auth_user'),
+                        'authenticated_at': time.time()
+                    }
+                    session['authenticated_user'] = user_info
+                    session.permanent = True
+                    
+                    # Redirect to clean URL without auth parameters
+                    clean_url = request.url.split('?')[0]
+                    return redirect(clean_url)
+                    
+            except Exception as e:
+                print(f"Auth verification error: {e}")
+        
+        # User needs to authenticate
+        if request.path.startswith('/api/'):
+            # For API requests, return JSON error with auth URL
+            auth_redirect = f"{AUTHELIA_URL}?rd={WEATHER_URL}{request.path}"
+            return jsonify({
+                'error': 'Authentication required',
+                'auth_url': auth_redirect,
+                'message': 'Please authenticate at the provided URL'
+            }), 401
+        
+        # For web requests, redirect to Authelia
+        auth_redirect = f"{AUTHELIA_URL}?rd={WEATHER_URL}{request.path}"
+        return redirect(auth_redirect)
+    
+    return decorated_function
+
+# Simple session-based auth check (alternative approach)
+def require_simple_auth(f):
+    """
+    Simpler version that just redirects to Authelia login
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check for a simple session token
+        if 'auth_token' in session and session.get('auth_token'):
+            return f(*args, **kwargs)
+        
+        # For API requests, always return JSON response
+        if request.path.startswith('/api/'):
+            return jsonify({
+                'error': 'Authentication required',
+                'login_url': f"{AUTHELIA_URL}",
+                'return_url': request.url
+            }), 401
+        
+        # Store the intended destination for web requests
+        session['auth_redirect'] = request.url
+        return redirect(f"{AUTHELIA_URL}")
+    
+    return decorated_function
 
 
 class WeatherDashboard:
@@ -77,10 +166,12 @@ class WeatherDashboard:
                         "data": data,
                         "timestamp": datetime.now().isoformat(),
                     },
+                    timeout=10  # Add timeout to prevent hanging
                 )
                 print(f"✓ Broadcasted {message_type} to clients")
             except Exception as e:
-                print(f"Broadcast error: {e}")
+                print(f"Broadcast error (non-fatal): {e}")
+                # Don't re-raise - continue operation
 
     def get_current_reading(self):
         """Get current reading with trends and predictions"""
@@ -878,24 +969,36 @@ dashboard = WeatherDashboard()
 
 # Flask web application
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
+app.permanent_session_lifetime = timedelta(days=7)
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*",
+    ping_timeout=120,
+    ping_interval=25,
+    logger=False,
+    engineio_logger=False
+)
 
 
 # WebSocket event handlers
 @socketio.on("connect")
 def handle_connect():
     print("Client connected")
-    # Send current data to newly connected client
-    current_reading = dashboard.get_current_reading()
-    if current_reading:
-        emit(
-            "message",
-            {
-                "type": "new_reading",
-                "data": current_reading,
-                "timestamp": datetime.now().isoformat(),
-            },
-        )
+    try:
+        # Send current data to newly connected client
+        current_reading = dashboard.get_current_reading()
+        if current_reading:
+            emit(
+                "message",
+                {
+                    "type": "new_reading",
+                    "data": current_reading,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            )
+    except Exception as e:
+        print(f"Error in WebSocket connect: {e}")
 
 
 @socketio.on("disconnect")
@@ -903,10 +1006,95 @@ def handle_disconnect():
     print("Client disconnected")
 
 
+@socketio.on_error_default
+def default_error_handler(e):
+    print(f"WebSocket error: {e}")
+    # Don't re-raise the error to prevent server crashes
+
+
+# Add a login callback endpoint
+@app.route('/auth/callback')
+def auth_callback():
+    """Handle successful authentication from Authelia"""
+    # This would be called after successful Authelia login
+    # For now, just set a simple session flag
+    session['auth_token'] = True
+    session.permanent = True
+    
+    # Redirect to intended destination or home
+    redirect_url = session.pop('auth_redirect', '/')
+    return redirect(redirect_url)
+
+# Add a logout endpoint
+@app.route('/auth/logout')
+def auth_logout():
+    """Logout endpoint"""
+    session.clear()
+    return redirect(f"{AUTHELIA_URL}/logout?rd={WEATHER_URL}")
+
+# Add a simple login endpoint for testing
+@app.route('/auth/login')
+def simple_login():
+    """Simple login for testing - sets auth token"""
+    session['auth_token'] = True
+    session.permanent = True
+    return jsonify({"success": True, "message": "Authentication successful"})
+
+# Add authentication status check endpoint
+@app.route('/api/auth/status')
+def auth_status():
+    """Check if user is authenticated"""
+    # Check multiple authentication sources
+    is_authenticated = False
+    
+    # Check our local session token
+    if 'auth_token' in session and session.get('auth_token'):
+        is_authenticated = True
+    
+    # Check for Authelia session cookie
+    elif 'authelia_session' in request.cookies:
+        # If Authelia session exists, create our local session
+        session['auth_token'] = True
+        session['auth_source'] = 'authelia'
+        session.permanent = True
+        is_authenticated = True
+    
+    # Check for Remote-User header (forward auth)
+    elif request.headers.get('Remote-User'):
+        # If forward auth header exists, create our local session
+        session['auth_token'] = True
+        session['username'] = request.headers.get('Remote-User')
+        session['auth_source'] = 'forward_auth'
+        session.permanent = True
+        is_authenticated = True
+    
+    return jsonify({
+        "authenticated": is_authenticated,
+        "login_url": f"{AUTHELIA_URL}" if not is_authenticated else None
+    })
+
+
 # API Routes
 @app.route("/")
 def dashboard_page():
     """Main dashboard page"""
+    # Check if user was authenticated by Authelia via headers or cookies
+    # This is a simple approach - in production, you'd validate the Authelia session
+    if not session.get('auth_token'):
+        # Check for Authelia authentication headers/cookies
+        remote_user = request.headers.get('Remote-User')
+        auth_user = request.args.get('auth_user')
+        
+        if remote_user or auth_user:
+            # User was authenticated by Authelia
+            session['auth_token'] = True
+            session['username'] = remote_user or auth_user
+            session.permanent = True
+            
+            # Redirect to clean URL without auth parameters
+            if request.args.get('auth_user'):
+                return redirect('/')
+    
     return render_template("dashboard.html")
 
 
@@ -975,8 +1163,9 @@ def force_reading():
 
 
 @app.route("/api/tag_event", methods=["POST"])
+@require_simple_auth  # Use the simpler version for now
 def api_tag_event():
-    """Accept a user-tagged weather event"""
+    """Accept a user-tagged weather event - now with authentication"""
     try:
         payload = request.get_json(force=True) or {}
         event_type = payload.get("event_type")
@@ -986,7 +1175,11 @@ def api_tag_event():
         if not event_type:
             return jsonify({"success": False, "error": "event_type required"}), 400
 
-        evt = dashboard.add_event_tag(event_type, intensity, notes)
+        # Add user info to the event (simple for now)
+        enhanced_notes = f"[Tagged by authenticated user] {notes or ''}"
+        
+        evt = dashboard.add_event_tag(event_type, intensity, enhanced_notes)
+        
         return jsonify({"success": True, "event": evt})
 
     except Exception as e:

@@ -658,7 +658,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div id="tag-weather-card" class="card" style="display:none;">
                 <h2>📝 Tag Current Weather</h2>
                 <div class="reading-label">Help improve future predictions by tagging what you observe right now.</div>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; justify-content:center;">
@@ -682,9 +682,17 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div id="recent-tags-card" class="card" style="display:none;">
                 <h2>🏷️ Recent Tags</h2>
                 <div id="recent-tags" class="predictions">No tags yet</div>
+            </div>
+
+            <div id="login-card" class="card" style="display:none;">
+                <h2>🔐 Authentication Required</h2>
+                <div class="reading-label">Log in to tag weather conditions and view recent tags.</div>
+                <div style="text-align:center; margin:20px 0;">
+                    <button class="btn" onclick="loginUser()">🔑 Log In</button>
+                </div>
             </div>
 
             <div class="card">
@@ -731,6 +739,7 @@
         let weekChart;
         let socket;
         let currentPressureRange = '1h';
+        let isAuthenticated = false;
         
         function initCharts() {
             // Initialize 24-hour weather chart
@@ -1468,13 +1477,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ event_type: eventType, intensity: intensity, notes: notes })
                 });
+                
+                // Handle authentication required (401)
+                if (res.status === 401) {
+                    const authResponse = await res.json();
+                    if (authResponse.login_url) {
+                        updateStatus('Authentication required - redirecting to login...', true);
+                        // Redirect to authentication
+                        window.location.href = authResponse.login_url;
+                        return;
+                    }
+                }
+                
                 const out = await res.json();
                 if (out.success) {
                     updateStatus('Tag saved');
                     if (document.getElementById('tag-notes')) document.getElementById('tag-notes').value = '';
                     await fetchRecentEvents();
                 } else {
-                    updateStatus('Failed to save tag', true);
+                    updateStatus(`Failed to save tag: ${out.error || 'Unknown error'}`, true);
                 }
             } catch (e) {
                 console.error('submitTag error', e);
@@ -1510,6 +1531,7 @@
         }
 
         async function fetchRecentEvents() {
+            if (!isAuthenticated) return; // Only fetch if authenticated
             try {
                 const res = await fetch('/api/events?limit=20');
                 if (res.ok) {
@@ -1581,6 +1603,59 @@
                 renderAPIComparison({error: 'Network error fetching comparison'});
             }
         }
+
+        async function checkAuthStatus() {
+            try {
+                const res = await fetch('/api/auth/status');
+                if (res.ok) {
+                    const authData = await res.json();
+                    isAuthenticated = authData.authenticated;
+                    updateAuthUI();
+                } else {
+                    isAuthenticated = false;
+                    updateAuthUI();
+                }
+            } catch (e) {
+                console.error('Auth check error', e);
+                isAuthenticated = false;
+                updateAuthUI();
+            }
+        }
+
+        function updateAuthUI() {
+            const tagWeatherCard = document.getElementById('tag-weather-card');
+            const recentTagsCard = document.getElementById('recent-tags-card');
+            const loginCard = document.getElementById('login-card');
+            
+            if (isAuthenticated) {
+                // Show authenticated features
+                if (tagWeatherCard) tagWeatherCard.style.display = 'block';
+                if (recentTagsCard) recentTagsCard.style.display = 'block';
+                if (loginCard) loginCard.style.display = 'none';
+                // Fetch recent events if authenticated
+                fetchRecentEvents();
+            } else {
+                // Show login prompt instead
+                if (tagWeatherCard) tagWeatherCard.style.display = 'none';
+                if (recentTagsCard) recentTagsCard.style.display = 'none';
+                if (loginCard) loginCard.style.display = 'block';
+            }
+        }
+
+        async function loginUser() {
+            try {
+                const res = await fetch('/api/auth/status');
+                if (res.ok) {
+                    const authData = await res.json();
+                    if (authData.login_url) {
+                        window.location.href = authData.login_url;
+                    }
+                }
+            } catch (e) {
+                console.error('Login error', e);
+                updateStatus('Login error', true);
+            }
+        }
         
         // Initialize Socket.IO connection for real-time updates
         function initSocketIO() {
@@ -1649,7 +1724,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initCharts();
             refreshData();
-            fetchRecentEvents();
+            checkAuthStatus(); // Check authentication first
             fetchAPIComparison();
             
             // Initialize Socket.IO for real-time updates
@@ -1661,6 +1736,14 @@
                     refreshData();
                 }
             }, 120000);
+            
+            // Check auth status when page gets focus (user might have logged in)
+            window.addEventListener('focus', function() {
+                setTimeout(checkAuthStatus, 500); // Small delay to allow any redirects to complete
+            });
+            
+            // Also check auth status periodically
+            setInterval(checkAuthStatus, 30000); // Check every 30 seconds
         });
     </script>
 </body>
