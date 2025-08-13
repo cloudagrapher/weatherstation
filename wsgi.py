@@ -10,7 +10,7 @@ eventlet.monkey_patch()
 
 import threading
 import time
-from dashboard_masterbox import app, socketio, dashboard
+from src.dashboard_masterbox import app, socketio, dashboard
 
 
 def update_data_periodically():

@@ -107,3 +107,4 @@ sudo journalctl -u weather-dashboard.service -f    # on masterbox
 
 - You can troubleshoot weatherbox directly with "ssh weatherbox@weatherbox.local"
 - So, I'm currently talking to you from a Raspberry Pi 4 called masterbox. It was influxDB running on it at 8086. However, the code in this repository is actually running on a Pi Zero W called weatherbox. Because weatherbox's resources are quite limited, I cannot connect to it with my IDE so I code on masterbox and then transfer the code to weatherbox. What I want to do is run FrontEnd on masterbox and have weatherbox send it's readings to influxdb running on masterbox.
+- feel free to argue with me if I disagree or say something you deem as innaccurate

@@ -24,7 +24,7 @@ SDWN_PIN = 27  # GPIO 27 (Pin 13)
 
 # Try to import configuration, fall back to defaults
 try:
-    from influxdb_config import INFLUX_HOST, INFLUX_PORT, INFLUX_ORG, INFLUX_BUCKET, INFLUX_TOKEN
+    from ..config.influxdb_config import INFLUX_HOST, INFLUX_PORT, INFLUX_ORG, INFLUX_BUCKET, INFLUX_TOKEN
 except ImportError:
     # Default configuration - update influxdb_config.py with your actual values
     INFLUX_HOST = "masterbox"  # or use IP address like "192.168.1.100"

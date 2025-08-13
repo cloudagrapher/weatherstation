@@ -128,7 +128,7 @@
         }
         
         .predictions {
-            max-height: 300px;
+            max-height: 600px;
             overflow-y: auto;
             min-height: 50px;
         }
@@ -155,6 +155,64 @@
             padding: 12px;
             margin-bottom: 10px;
             border-left: 4px solid #38a169;
+            cursor: help;
+            position: relative;
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            max-width: 300px;
+            white-space: normal;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            margin-bottom: 8px;
+        }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #2d3748;
+        }
+        
+        .prediction-item:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Mobile tooltip adjustments */
+        @media (max-width: 768px) {
+            .tooltip {
+                position: fixed;
+                bottom: auto;
+                top: 20px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                max-width: none;
+                font-size: 0.9rem;
+                text-align: center;
+            }
+            
+            .tooltip::after {
+                display: none;
+            }
         }
         
         .daily-summary {
@@ -260,6 +318,36 @@
             margin-top: 10px;
         }
         
+        .chart-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #718096;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover {
+            color: #4299e1;
+            background: rgba(66, 153, 225, 0.1);
+        }
+        
+        .tab-btn.active {
+            color: #4299e1;
+            border-bottom-color: #4299e1;
+            font-weight: bold;
+        }
+        
         /* Mobile-first responsive design */
         @media (max-width: 480px) {
             .container {
@@ -359,6 +447,17 @@
             textarea {
                 font-size: 14px;
                 min-height: 50px !important;
+            }
+            
+            .tab-btn {
+                padding: 8px 8px;
+                font-size: 0.75rem;
+                min-width: auto;
+            }
+            
+            .chart-tabs {
+                flex-wrap: wrap;
+                gap: 2px;
             }
         }
         
@@ -467,6 +566,11 @@
             <p>Real-time temperature and humidity monitoring</p>
         </div>
         
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/analysis" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.2); transition: background 0.3s; display: inline-block; margin: 0 10px;">📊 Historical Analysis</a>
+            <a href="/" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.2); transition: background 0.3s; display: inline-block; margin: 0 10px;">🏠 Live Dashboard</a>
+        </div>
+        
         <div id="status" class="status">
             Connecting to weather station...
         </div>
@@ -489,6 +593,13 @@
                 <div id="humidity" class="reading-value">--%</div>
                 <div class="reading-label">Relative Humidity</div>
                 <div id="humidity-trend" class="trend">Loading...</div>
+            </div>
+            
+            <div class="card current-reading">
+                <h2>🌤️ Feels Like</h2>
+                <div id="feels-like" class="reading-value">--°F</div>
+                <div class="reading-label">Apparent Temperature</div>
+                <div id="comfort-descriptions" class="trend">Loading...</div>
             </div>
             
             <div class="card current-reading">
@@ -529,6 +640,14 @@
                         <div id="pressure-low" class="summary-value">-- hPa</div>
                         <div class="summary-label">Low Pressure</div>
                     </div>
+                    <div class="summary-item">
+                        <div id="feels-like-high" class="summary-value">--°F</div>
+                        <div class="summary-label">High Feels Like</div>
+                    </div>
+                    <div class="summary-item">
+                        <div id="feels-like-low" class="summary-value">--°F</div>
+                        <div class="summary-label">Low Feels Like</div>
+                    </div>
                 </div>
             </div>
             
@@ -567,13 +686,30 @@
                 <div id="recent-tags" class="predictions">No tags yet</div>
             </div>
 
+            <div class="card">
+                <h2>📡 Official Weather</h2>
+                <div id="api-comparison" class="predictions">
+                    <div class="prediction-item">Loading official weather data...</div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #718096; text-align: center;">
+                    Data from National Weather Service
+                </div>
+            </div>
+
             <div class="card chart-container">
                 <h2>📈 24-Hour History</h2>
                 <canvas id="weatherChart"></canvas>
             </div>
             
             <div class="card chart-container">
-                <h2>📊 Pressure Trends (24 Hours)</h2>
+                <h2>📊 Pressure Trends</h2>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchPressureRange('1h')">1 Hour</button>
+                    <button class="tab-btn" onclick="switchPressureRange('6h')">6 Hours</button>
+                    <button class="tab-btn" onclick="switchPressureRange('12h')">12 Hours</button>
+                    <button class="tab-btn" onclick="switchPressureRange('24h')">24 Hours</button>
+                    <button class="tab-btn" onclick="switchPressureRange('5d')">5 Days</button>
+                </div>
                 <canvas id="pressureChart"></canvas>
             </div>
             
@@ -593,6 +729,7 @@
         let pressureChart;
         let weekChart;
         let socket;
+        let currentPressureRange = '1h';
         
         function initCharts() {
             // Initialize 24-hour weather chart
@@ -607,14 +744,30 @@
                             data: [],
                             borderColor: '#e53e3e',
                             backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
                         },
                         {
                             label: 'Humidity (%)',
                             data: [],
                             borderColor: '#3182ce',
                             backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
+                        },
+                        {
+                            label: 'Pressure (hPa)',
+                            data: [],
+                            borderColor: '#38a169',
+                            backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
                         }
                     ]
                 },
@@ -654,6 +807,11 @@
                             grid: {
                                 drawOnChartArea: false,
                             },
+                        },
+                        y2: {
+                            type: 'linear',
+                            display: false,
+                            position: 'right',
                         }
                     }
                 }
@@ -671,7 +829,37 @@
                             data: [],
                             borderColor: '#38a169',
                             backgroundColor: 'rgba(56, 161, 105, 0.1)',
-                            fill: true
+                            fill: true,
+                            tension: 0.6, // Smoother curves
+                            pointRadius: 0, // No points by default
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgba(0,0,0,0)', // Transparent points
+                            pointBorderColor: 'rgba(0,0,0,0)',
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Sea level (1013.25 hPa)',
+                            data: [],
+                            borderColor: '#a0aec0',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            borderWidth: 1,
+                            borderDash: [8, 4]
+                        },
+                        {
+                            label: 'Trend Line',
+                            data: [],
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            borderWidth: 2,
+                            borderDash: [4, 4]
                         }
                     ]
                 },
@@ -679,6 +867,19 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     resizeDelay: 100,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'line'
+                            }
+                        }
+                    },
                     scales: {
                         x: {
                             display: true,
@@ -692,26 +893,9 @@
                             title: {
                                 display: true,
                                 text: 'Pressure (hPa)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 1013.25,
-                                    yMax: 1013.25,
-                                    borderColor: '#718096',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: 'Sea Level (1013.25 hPa)',
-                                        enabled: true,
-                                        position: 'end'
-                                    }
-                                }
-                            }
+                            },
+                            min: 980,
+                            max: 1050,
                         }
                     }
                 }
@@ -729,21 +913,30 @@
                             data: [],
                             borderColor: '#e53e3e',
                             backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         },
                         {
                             label: 'Humidity (%)',
                             data: [],
                             borderColor: '#3182ce',
                             backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         },
                         {
                             label: 'Pressure (hPa)',
                             data: [],
                             borderColor: '#38a169',
                             backgroundColor: 'rgba(56, 161, 105, 0.1)',
-                            yAxisID: 'y2'
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            pointRadius: 1,
+                            pointHoverRadius: 3
                         }
                     ]
                 },
@@ -822,6 +1015,19 @@
                 document.getElementById('pressure-status').className = 'pressure-status';
             }
             
+            // Update feels like temperature and comfort descriptions
+            if (data.feels_like_f !== null && data.feels_like_f !== undefined) {
+                document.getElementById('feels-like').textContent = `${data.feels_like_f}°F`;
+                if (data.comfort_descriptions && data.comfort_descriptions.length > 0) {
+                    document.getElementById('comfort-descriptions').textContent = data.comfort_descriptions.join(' • ');
+                } else {
+                    document.getElementById('comfort-descriptions').textContent = 'Moderate conditions';
+                }
+            } else {
+                document.getElementById('feels-like').textContent = 'N/A';
+                document.getElementById('comfort-descriptions').textContent = 'No data';
+            }
+            
             document.getElementById('temp-trend').textContent = data.temp_trend || 'No trend data';
             document.getElementById('humidity-trend').textContent = data.humidity_trend || 'No trend data';
             document.getElementById('pressure-trend').textContent = data.pressure_trend || 'No pressure data';
@@ -843,17 +1049,87 @@
                     document.getElementById('pressure-high').textContent = 'N/A';
                     document.getElementById('pressure-low').textContent = 'N/A';
                 }
+                
+                // Update feels like summary if available
+                if (summary.feels_like_high !== undefined) {
+                    document.getElementById('feels-like-high').textContent = `${summary.feels_like_high}°F`;
+                    document.getElementById('feels-like-low').textContent = `${summary.feels_like_low}°F`;
+                } else {
+                    document.getElementById('feels-like-high').textContent = 'N/A';
+                    document.getElementById('feels-like-low').textContent = 'N/A';
+                }
             }
             
             // Update predictions
             const predictionsDiv = document.getElementById('predictions');
             if (data.predictions && data.predictions.length > 0) {
                 predictionsDiv.innerHTML = data.predictions
-                    .map(p => `<div class="prediction-item">${p}</div>`)
+                    .map(p => {
+                        const explanation = getWeatherExplanation(p);
+                        return `<div class="prediction-item">
+                            ${p}
+                            ${explanation ? `<div class="tooltip">${explanation}</div>` : ''}
+                        </div>`;
+                    })
                     .join('');
             } else {
                 predictionsDiv.innerHTML = '<div class="prediction-item">No predictions available</div>';
             }
+        }
+        
+        function getWeatherExplanation(prediction) {
+            const text = prediction.toLowerCase();
+            
+            // Weather explanations based on prediction logic
+            if (text.includes('major storm') || text.includes('severe weather')) {
+                return 'Barometric pressure below 980 hPa indicates an intense low-pressure system. These conditions typically bring severe thunderstorms, heavy rain, or dangerous weather.';
+            }
+            if (text.includes('rapidly intensifying storm')) {
+                return 'Pressure below 995 hPa and falling fast (>2 hPa/hr) signals a storm system strengthening as it approaches. Expect deteriorating conditions within hours.';
+            }
+            if (text.includes('low pressure system') && text.includes('rain')) {
+                return 'Pressure between 995-1000 hPa creates atmospheric instability. Moisture-laden air rises, cools, and condenses into precipitation within 6-12 hours.';
+            }
+            if (text.includes('high pressure') && text.includes('clear')) {
+                return 'Pressure above 1030 hPa indicates a strong high-pressure system. Sinking air suppresses cloud formation, creating clear skies and stable weather.';
+            }
+            if (text.includes('pressure falling rapidly')) {
+                return 'Rapid pressure drops (>3 hPa/hr) indicate an approaching weather front or storm. The steeper the pressure gradient, the stronger the incoming weather system.';
+            }
+            if (text.includes('storm clearing')) {
+                return 'Rapidly rising pressure after high humidity suggests a storm system has passed. High pressure is building behind the front, bringing improving conditions.';
+            }
+            if (text.includes('pressure rising rapidly')) {
+                return 'Fast pressure increases (>2 hPa/hr) typically follow weather fronts, indicating clearing skies and more stable atmospheric conditions ahead.';
+            }
+            if (text.includes('fog')) {
+                return 'Fog forms when temperature and dew point converge. High humidity (>85%), stable pressure, and cool temperatures create ideal conditions for water vapor condensation.';
+            }
+            if (text.includes('thunderstorm') && text.includes('likely')) {
+                return 'Combination of falling pressure, high humidity (>75%), and rising temperatures creates atmospheric instability perfect for thunderstorm development.';
+            }
+            if (text.includes('fire weather')) {
+                return 'Low humidity (<30%) combined with stable/rising pressure and moderate temperatures creates dry conditions that increase wildfire risk and rapid fire spread.';
+            }
+            if (text.includes('frost')) {
+                return 'Clear skies from high pressure allow rapid nighttime cooling. When temperature approaches dew point and drops below 35°F, frost formation is likely.';
+            }
+            if (text.includes('unsettled weather')) {
+                return 'Moderate low pressure (1000-1010 hPa) with high humidity creates unstable conditions. Expect intermittent clouds and possible scattered showers.';
+            }
+            if (text.includes('fair weather')) {
+                return 'Pressure between 1020-1030 hPa indicates a stable atmospheric pattern with generally pleasant conditions and minimal precipitation chances.';
+            }
+            
+            // Default explanations for common terms
+            if (text.includes('humidity rising') || text.includes('moisture')) {
+                return 'Increasing atmospheric moisture often precedes weather changes. Rising humidity can indicate approaching precipitation or changing air masses.';
+            }
+            if (text.includes('temperature') && text.includes('trend')) {
+                return 'Temperature trends help predict weather patterns. Rapid changes often signal frontal passages or significant atmospheric shifts.';
+            }
+            
+            return null; // No explanation available
         }
         
         function updatePressureStatus(pressure) {
@@ -871,40 +1147,223 @@
             }
         }
         
+        function filterToMinuteIntervals(data) {
+            if (!data || data.length === 0) return data;
+            
+            const filtered = [];
+            let lastMinute = -1;
+            
+            for (let i = 0; i < data.length; i++) {
+                const timestamp = new Date(data[i].timestamp);
+                const currentMinute = timestamp.getTime() - (timestamp.getTime() % 60000); // Round down to minute
+                
+                if (currentMinute !== lastMinute) {
+                    filtered.push(data[i]);
+                    lastMinute = currentMinute;
+                }
+            }
+            
+            return filtered;
+        }
+        
+        function smoothData(data, windowSize = 3) {
+            if (!data || data.length < windowSize) return data;
+            
+            const smoothed = [];
+            for (let i = 0; i < data.length; i++) {
+                const start = Math.max(0, i - Math.floor(windowSize / 2));
+                const end = Math.min(data.length, i + Math.ceil(windowSize / 2));
+                const window = data.slice(start, end);
+                const validValues = window.filter(val => val !== null && val !== undefined && !isNaN(val));
+                if (validValues.length === 0) {
+                    smoothed.push(data[i]);
+                } else {
+                    const avg = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
+                    smoothed.push(avg);
+                }
+            }
+            return smoothed;
+        }
+        
+        function calculateTrendLine(data) {
+            // Calculate linear regression for trend line
+            if (!data || data.length < 2) return [];
+            
+            const n = data.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const x = i;
+                const y = data[i];
+                if (y !== null && y !== undefined && !isNaN(y)) {
+                    sumX += x;
+                    sumY += y;
+                    sumXY += x * y;
+                    sumXX += x * x;
+                }
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            // Generate trend line points
+            const trendLine = [];
+            for (let i = 0; i < n; i++) {
+                trendLine.push(slope * i + intercept);
+            }
+            
+            return trendLine;
+        }
+        
         function updateChart(historyData) {
             if (!historyData || historyData.length === 0) return;
             
-            const labels = historyData.map(d => formatTime(d.timestamp));
-            const temperatures = historyData.map(d => d.temperature_f);
-            const humidities = historyData.map(d => d.humidity);
+            // Filter to 1-minute intervals for performance and clarity
+            const filteredData = filterToMinuteIntervals(historyData);
+            
+            const labels = filteredData.map(d => formatTime(d.timestamp));
+            const temperatures = smoothData(filteredData.map(d => d.temperature_f), 5);
+            const humidities = smoothData(filteredData.map(d => d.humidity), 5);
+            const pressures = smoothData(filteredData.map(d => d.pressure_hpa || null), 5);
             
             weatherChart.data.labels = labels;
             weatherChart.data.datasets[0].data = temperatures;
             weatherChart.data.datasets[1].data = humidities;
+            weatherChart.data.datasets[2].data = pressures;
             weatherChart.update();
         }
         
         function updatePressureChart(pressureData) {
             if (!pressureData || pressureData.length === 0) return;
             
-            const labels = pressureData.map(d => formatTime(d.timestamp));
-            const pressures = pressureData.map(d => d.pressure_hpa);
+            // Filter to 1-minute intervals for performance and clarity
+            const filteredData = filterToMinuteIntervals(pressureData);
+            
+            // Enhanced mobile-friendly labeling
+            const isMobile = window.innerWidth <= 768;
+            const is1Hour = currentPressureRange === '1h';
+            
+            let labels, smoothingLevel;
+            
+            const is6Hour = currentPressureRange === '6h';
+            const is5Day = currentPressureRange === '5d';
+            
+            // Simple time labels approach
+            const now = new Date();
+            
+            // Generate basic time labels for now - just use times
+            labels = filteredData.map((d, i) => {
+                const date = new Date(d.timestamp);
+                if (is5Day) {
+                    return date.toLocaleDateString([], {month: 'short', day: 'numeric'});
+                } else {
+                    return formatTime(d.timestamp);
+                }
+            });
+            
+            smoothingLevel = is5Day ? (isMobile ? 8 : 6) : (isMobile ? 7 : 4);
+            
+            const pressures = smoothData(filteredData.map(d => d.pressure_hpa), smoothingLevel);
+            
             
             pressureChart.data.labels = labels;
             pressureChart.data.datasets[0].data = pressures;
+            // Keep a constant sea-level reference line matching label length
+            pressureChart.data.datasets[1].data = new Array(labels.length).fill(1013.25);
+            
+            // Calculate and add normalized trend line
+            if (pressures.length > 2) {
+                const trendLine = calculateTrendLine(pressures);
+                pressureChart.data.datasets[2].data = trendLine;
+            } else {
+                pressureChart.data.datasets[2].data = [];
+            }
+            
+            // Fixed Y-axis scaling - always use full meteorological range
+            if (!pressureChart.options.scales.y) {
+                pressureChart.options.scales.y = {};
+            }
+            pressureChart.options.scales.y.min = 980;
+            pressureChart.options.scales.y.max = 1050;
+            
+            // Configure chart for mobile/desktop
+            if (isMobile) {
+                // Mobile settings
+                pressureChart.options.scales.x.ticks = {
+                    maxTicksLimit: is1Hour ? 4 : 6,
+                    maxRotation: 45,
+                    font: { size: 10 }
+                };
+                pressureChart.options.scales.y.ticks = {
+                    maxTicksLimit: 5,
+                    font: { size: 10 }
+                };
+                
+                // Hide legend on very small screens for short ranges
+                if ((is1Hour || is6Hour) && window.innerWidth <= 480) {
+                    pressureChart.options.plugins.legend.display = false;
+                } else {
+                    pressureChart.options.plugins.legend.display = true;
+                }
+            } else {
+                // Desktop settings
+                pressureChart.options.scales.x.ticks = {
+                    maxTicksLimit: is1Hour ? 6 : is5Day ? 10 : 8,
+                    maxRotation: 45,
+                    font: { size: 11 }
+                };
+                pressureChart.options.scales.y.ticks = {
+                    font: { size: 11 }
+                };
+                pressureChart.options.plugins.legend.display = true;
+            }
+            
             pressureChart.update();
+        }
+        
+        async function switchPressureRange(range) {
+            // Update active tab
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            currentPressureRange = range;
+            
+            // Fetch new data for the selected range
+            try {
+                let hours;
+                switch(range) {
+                    case '1h': hours = 1; break;
+                    case '6h': hours = 6; break;
+                    case '12h': hours = 12; break;
+                    case '24h': hours = 24; break;
+                    case '5d': hours = 120; break; // 5 days = 120 hours
+                    default: hours = 1;
+                }
+                
+                let url = `/api/history/pressure?hours=${hours}`;
+                const response = await fetch(url);
+                if (response.ok) {
+                    const pressureData = await response.json();
+                    updatePressureChart(pressureData);
+                }
+            } catch (error) {
+                console.error('Error fetching pressure data:', error);
+            }
         }
         
         function updateWeekChart(weekData) {
             if (!weekData || weekData.length === 0) return;
             
-            const labels = weekData.map(d => {
+            // Filter to 1-minute intervals for performance and clarity
+            const filteredData = filterToMinuteIntervals(weekData);
+            
+            const labels = filteredData.map(d => {
                 const date = new Date(d.timestamp);
                 return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             });
-            const temperatures = weekData.map(d => d.temperature_f);
-            const humidities = weekData.map(d => d.humidity);
-            const pressures = weekData.map(d => d.pressure_hpa || null);
+            const temperatures = smoothData(filteredData.map(d => d.temperature_f), 7);
+            const humidities = smoothData(filteredData.map(d => d.humidity), 7);
+            const pressures = smoothData(filteredData.map(d => d.pressure_hpa || null), 5);
             
             weekChart.data.labels = labels;
             weekChart.data.datasets[0].data = temperatures;
@@ -938,8 +1397,17 @@
                     updateChart(data24h);
                 }
                 
-                // Fetch pressure trend data
-                const responsePressure = await fetch('/api/history/pressure');
+                // Fetch pressure trend data based on current range
+                let hours;
+                switch(currentPressureRange) {
+                    case '1h': hours = 1; break;
+                    case '6h': hours = 6; break;
+                    case '12h': hours = 12; break;
+                    case '24h': hours = 24; break;
+                    case '5d': hours = 120; break;
+                    default: hours = 1;
+                }
+                const responsePressure = await fetch(`/api/history/pressure?hours=${hours}`);
                 if (responsePressure.ok) {
                     const pressureData = await responsePressure.json();
                     updatePressureChart(pressureData);
@@ -982,6 +1450,9 @@
             updateStatus('Refreshing data...');
             const currentSuccess = await fetchCurrentData();
             const historySuccess = await fetchHistoryData();
+            
+            // Fetch API comparison data
+            fetchAPIComparison();
             
             if (currentSuccess && historySuccess) {
                 updateStatus('Data refreshed successfully');
@@ -1046,6 +1517,67 @@
                 console.error('fetchRecentEvents error', e);
             }
         }
+
+        function renderAPIComparison(comparisonData) {
+            const container = document.getElementById('api-comparison');
+            if (!container) return;
+            
+            if (!comparisonData || comparisonData.error) {
+                container.innerHTML = `<div class="prediction-item">⚠️ ${comparisonData?.error || 'API data unavailable'}</div>`;
+                return;
+            }
+            
+            const official = comparisonData.official;
+            const comparison = comparisonData.comparison;
+            const status = comparisonData.summary_status;
+            
+            let html = '';
+            
+            // Official conditions header
+            if (official) {
+                const ageText = official.age_minutes !== undefined ? `${official.age_minutes}m ago` : '';
+                html += `<div class="prediction-item">
+                    <strong>📍 ${official.station_name || 'Official Station'}</strong><br>
+                    🌤️ ${official.conditions || 'N/A'} ${ageText ? `(${ageText})` : ''}
+                </div>`;
+                
+                // Official readings
+                html += `<div class="prediction-item">
+                    🌡️ ${official.temperature_f !== undefined ? official.temperature_f + '°F' : 'N/A'} • 
+                    💧 ${official.humidity !== undefined ? official.humidity + '%' : 'N/A'} • 
+                    📊 ${official.pressure_hpa !== undefined ? official.pressure_hpa + ' hPa' : 'N/A'}
+                </div>`;
+            }
+            
+            // Skip the overall status - just show individual comparisons
+            
+            // Detailed comparisons
+            if (comparison && comparison.comparisons) {
+                for (const comp of comparison.comparisons) {
+                    // Use neutral comparison indicator without status judgment
+                    html += `<div class="prediction-item">
+                        📊 <strong>${comp.parameter}:</strong> ${comp.local} vs ${comp.official} (${comp.difference})
+                    </div>`;
+                }
+            }
+            
+            container.innerHTML = html;
+        }
+
+        async function fetchAPIComparison() {
+            try {
+                const res = await fetch('/api/weather_comparison');
+                if (res.ok) {
+                    const comparisonData = await res.json();
+                    renderAPIComparison(comparisonData);
+                } else {
+                    renderAPIComparison({error: 'Failed to fetch comparison data'});
+                }
+            } catch (e) {
+                console.error('fetchAPIComparison error', e);
+                renderAPIComparison({error: 'Network error fetching comparison'});
+            }
+        }
         
         // Initialize Socket.IO connection for real-time updates
         function initSocketIO() {
@@ -1065,8 +1597,9 @@
                     updateCurrentData(data.data);
                     updateStatus('New reading received - Live data');
                     
-                    // Refresh charts with new data
+                    // Refresh charts and API comparison with new data
                     fetchHistoryData();
+                    fetchAPIComparison();
                 } else if (data.type === 'status') {
                     updateStatus(data.data.message, data.data.error || false);
                 }
@@ -1087,11 +1620,34 @@
             });
         }
         
+        // Handle window resize for mobile optimization
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                // Refresh pressure chart with new mobile settings
+                let hours;
+                switch(currentPressureRange) {
+                    case '1h': hours = 1; break;
+                    case '6h': hours = 6; break;
+                    case '12h': hours = 12; break;
+                    case '24h': hours = 24; break;
+                    case '5d': hours = 120; break;
+                    default: hours = 1;
+                }
+                fetch(`/api/history/pressure?hours=${hours}`)
+                    .then(response => response.json())
+                    .then(data => updatePressureChart(data))
+                    .catch(error => console.error('Error refreshing chart after resize:', error));
+            }, 250);
+        });
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             initCharts();
             refreshData();
             fetchRecentEvents();
+            fetchAPIComparison();
             
             // Initialize Socket.IO for real-time updates
             initSocketIO();

@@ -7,7 +7,7 @@ Type=simple
 User=masterbox
 Group=masterbox
 WorkingDirectory=/home/masterbox/weatherstation
-ExecStart=/home/masterbox/weatherstation/.venv/bin/gunicorn --config gunicorn_config.py wsgi:application
+ExecStart=/home/masterbox/weatherstation/.venv/bin/gunicorn --config config/gunicorn_config.py wsgi:application
 Restart=always
 RestartSec=10
 Environment=FLASK_ENV=production
