@@ -701,7 +701,7 @@
                     <div class="prediction-item">Loading official weather data...</div>
                 </div>
                 <div style="margin-top: 10px; font-size: 0.8rem; color: #718096; text-align: center;">
-                    Data from National Weather Service
+                    Official data from OpenWeatherMap • Local data from weatherbox sensors
                 </div>
             </div>
 
@@ -1566,22 +1566,31 @@
                     🌤️ ${official.conditions || 'N/A'} ${ageText ? `(${ageText})` : ''}
                 </div>`;
                 
-                // Official readings
+                // Official readings  
+                const tempDisplay = official.temperature_f !== undefined ? official.temperature_f + '°F' : 'N/A';
+                const feelsLikeDisplay = official.feels_like_f !== undefined ? ` (feels ${official.feels_like_f}°F)` : '';
+                const humidityDisplay = official.humidity !== undefined ? official.humidity + '%' : 'N/A';
+                const pressureDisplay = official.pressure_hpa !== undefined ? official.pressure_hpa + ' hPa' : 'N/A';
+                
                 html += `<div class="prediction-item">
-                    🌡️ ${official.temperature_f !== undefined ? official.temperature_f + '°F' : 'N/A'} • 
-                    💧 ${official.humidity !== undefined ? official.humidity + '%' : 'N/A'} • 
-                    📊 ${official.pressure_hpa !== undefined ? official.pressure_hpa + ' hPa' : 'N/A'}
+                    🌡️ ${tempDisplay}${feelsLikeDisplay} • 
+                    💧 ${humidityDisplay} • 
+                    📊 ${pressureDisplay}
                 </div>`;
             }
             
             // Skip the overall status - just show individual comparisons
             
-            // Detailed comparisons
+            // Detailed comparisons with source clarification
             if (comparison && comparison.comparisons) {
+                html += `<div style="margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem;">
+                    <strong>Local vs Official Comparison:</strong>
+                </div>`;
+                
                 for (const comp of comparison.comparisons) {
                     // Use neutral comparison indicator without status judgment
                     html += `<div class="prediction-item">
-                        📊 <strong>${comp.parameter}:</strong> ${comp.local} vs ${comp.official} (${comp.difference})
+                        📊 <strong>${comp.parameter}:</strong> ${comp.local} (local sensors) vs ${comp.official} (OpenWeatherMap) (${comp.difference})
                     </div>`;
                 }
             }

@@ -73,6 +73,7 @@ class WeatherAPIService:
                 "timestamp": datetime.fromtimestamp(current.get("dt", 0)).isoformat(),
                 "temperature_c": None,
                 "temperature_f": None,
+                "feels_like_f": None,
                 "humidity": None,
                 "pressure_hpa": None,
                 "pressure_mb": None,
@@ -88,6 +89,10 @@ class WeatherAPIService:
                 temp_f = current["temp"]
                 result["temperature_f"] = round(temp_f, 1)
                 result["temperature_c"] = round((temp_f - 32) * 5 / 9, 1)
+
+            # Feels like temperature (already in Fahrenheit due to units=imperial)
+            if current.get("feels_like") is not None:
+                result["feels_like_f"] = round(current["feels_like"], 1)
 
             # Humidity
             if current.get("humidity") is not None:
@@ -207,6 +212,7 @@ class WeatherAPIService:
             "timestamp": official.get("timestamp"),
             "conditions": official.get("weather_description", "N/A"),
             "temperature_f": official.get("temperature_f"),
+            "feels_like_f": official.get("feels_like_f"),
             "humidity": official.get("humidity"),
             "pressure_hpa": official.get("pressure_hpa"),
             "wind_speed_mph": official.get("wind_speed_mph"),
