@@ -6,6 +6,7 @@ For production deployment with gunicorn
 
 # IMPORTANT: monkey patch must be first
 import eventlet
+
 eventlet.monkey_patch()
 
 import threading
@@ -19,16 +20,16 @@ def update_data_periodically():
         try:
             dashboard._update_current_data()
             current_reading = dashboard.get_current_reading()
-            
+
             if current_reading:
                 dashboard.broadcast_update(current_reading, "new_reading")
                 print("✓ Data updated and broadcasted")
             else:
                 print("✗ No current data available")
-        
+
         except Exception as e:
             print(f"Error in periodic update: {e}")
-        
+
         # Wait 30 seconds before next update
         time.sleep(30)
 

@@ -18,7 +18,7 @@ max_requests_jitter = 50
 
 # Logging
 errorlog = "-"  # Log to stderr (handled by systemd)
-accesslog = "-"  # Log to stdout (handled by systemd)  
+accesslog = "-"  # Log to stdout (handled by systemd)
 loglevel = "info"
 
 # Process naming
@@ -35,4 +35,4 @@ preload_app = True
 graceful_timeout = 30
 
 # Environment variables
-os.environ.setdefault('FLASK_ENV', 'production')
+os.environ.setdefault("FLASK_ENV", "production")

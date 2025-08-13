@@ -24,7 +24,13 @@ SDWN_PIN = 27  # GPIO 27 (Pin 13)
 
 # Try to import configuration, fall back to defaults
 try:
-    from ..config.influxdb_config import INFLUX_HOST, INFLUX_PORT, INFLUX_ORG, INFLUX_BUCKET, INFLUX_TOKEN
+    from ..config.influxdb_config import (
+        INFLUX_HOST,
+        INFLUX_PORT,
+        INFLUX_ORG,
+        INFLUX_BUCKET,
+        INFLUX_TOKEN,
+    )
 except ImportError:
     # Default configuration - update influxdb_config.py with your actual values
     INFLUX_HOST = "masterbox"  # or use IP address like "192.168.1.100"
@@ -162,7 +168,7 @@ class SensorLogger:
             self.influx_client = InfluxDBClient(
                 url=f"http://{INFLUX_HOST}:{INFLUX_PORT}",
                 token=INFLUX_TOKEN,
-                org=INFLUX_ORG
+                org=INFLUX_ORG,
             )
             self.write_api = self.influx_client.write_api(write_options=SYNCHRONOUS)
             print(f"Connected to InfluxDB at {INFLUX_HOST}:{INFLUX_PORT}")
@@ -183,11 +189,13 @@ class SensorLogger:
             # Validate readings are reasonable
             if -40 <= temperature_c <= 80 and 0 <= humidity <= 100:
                 temp_f = temperature_c * 9.0 / 5.0 + 32.0
-                data.update({
-                    "temperature_c": round(temperature_c, 2),
-                    "temperature_f": round(temp_f, 2),
-                    "humidity": round(humidity, 2)
-                })
+                data.update(
+                    {
+                        "temperature_c": round(temperature_c, 2),
+                        "temperature_f": round(temp_f, 2),
+                        "humidity": round(humidity, 2),
+                    }
+                )
 
         # Read MPL115A2
         pressure_hpa = self.pressure_sensor.read_pressure()
@@ -195,7 +203,9 @@ class SensorLogger:
             data["pressure_hpa"] = pressure_hpa
 
         data["timestamp"] = datetime.now()
-        return data if len(data) > 1 else None  # Must have at least timestamp + one reading
+        return (
+            data if len(data) > 1 else None
+        )  # Must have at least timestamp + one reading
 
     def send_to_influxdb(self, data):
         """Send data to InfluxDB"""
@@ -203,9 +213,11 @@ class SensorLogger:
             return False
 
         try:
-            point = Point("weather") \
-                .tag("location", "weatherbox") \
+            point = (
+                Point("weather")
+                .tag("location", "weatherbox")
                 .tag("sensor_type", "dht22_mpl115a2")
+            )
 
             # Add fields
             if "temperature_c" in data:
@@ -221,7 +233,7 @@ class SensorLogger:
 
             self.write_api.write(bucket=INFLUX_BUCKET, record=point)
             return True
-            
+
         except Exception as e:
             print(f"InfluxDB write error: {e}")
             return False
@@ -233,7 +245,9 @@ class SensorLogger:
         humidity_str = f"{data.get('humidity', 'N/A')}%"
         pressure_str = f"{data.get('pressure_hpa', 'N/A')} hPa"
 
-        print(f"[{timestamp}] Temp: {temp_str}, Humidity: {humidity_str}, Pressure: {pressure_str}")
+        print(
+            f"[{timestamp}] Temp: {temp_str}, Humidity: {humidity_str}, Pressure: {pressure_str}"
+        )
 
     def run(self):
         """Main sensor reading loop"""
@@ -245,7 +259,7 @@ class SensorLogger:
         try:
             while True:
                 data = self.read_sensors()
-                
+
                 if data:
                     # Log to console
                     self.log_reading(data)
@@ -256,7 +270,9 @@ class SensorLogger:
                     else:
                         print("  → InfluxDB failed ✗")
                 else:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] No valid sensor data")
+                    print(
+                        f"[{datetime.now().strftime('%H:%M:%S')}] No valid sensor data"
+                    )
 
                 time.sleep(READING_INTERVAL)
 
