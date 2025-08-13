@@ -135,8 +135,19 @@
         .grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 25px;
             margin-bottom: 30px;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .comparison-section {
+            margin-top: 25px;
         }
         
         .card {
@@ -294,6 +305,13 @@
             .chart-container {
                 height: 300px;
             }
+            
+            /* Stack comparison charts vertically on mobile */
+            .card div[style*="grid-template-columns: 1fr 1fr"] {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 20px !important;
+            }
         }
     </style>
 </head>
@@ -329,7 +347,25 @@
             </div>
         </div>
         
-        <div id="analysis-content">
+        <div class="controls comparison-section">
+            <h2>🔄 Day Comparison</h2>
+            <div class="date-inputs">
+                <div class="date-input">
+                    <label for="compare-date1">First Day:</label>
+                    <input type="date" id="compare-date1" value="">
+                </div>
+                <div class="date-input">
+                    <label for="compare-date2">Second Day:</label>
+                    <input type="date" id="compare-date2" value="">
+                </div>
+                <div style="display: flex; align-items: flex-end; gap: 10px;">
+                    <button class="btn" onclick="loadComparison()">Compare Days</button>
+                    <button class="btn btn-secondary" onclick="setTodayYesterdayComparison()">Today vs Yesterday</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="analysis-content" class="analysis-grid">
             <div class="card">
                 <div class="no-data">
                     Select a date range above to view historical weather analysis
@@ -343,6 +379,13 @@
         
         // Set default date to today
         document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
+        
+        // Set default comparison dates to yesterday and today
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        document.getElementById('compare-date1').value = yesterday.toISOString().split('T')[0];
+        document.getElementById('compare-date2').value = today.toISOString().split('T')[0];
         
         function setTodayRange() {
             const today = new Date().toISOString().split('T')[0];
@@ -368,6 +411,16 @@
             document.getElementById('start-date').value = start.toISOString().split('T')[0];
             document.getElementById('end-date').value = end.toISOString().split('T')[0];
             loadAnalysis();
+        }
+        
+        function setTodayYesterdayComparison() {
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            document.getElementById('compare-date1').value = yesterday.toISOString().split('T')[0];
+            document.getElementById('compare-date2').value = today.toISOString().split('T')[0];
+            loadComparison();
         }
         
         async function loadAnalysis() {
@@ -405,6 +458,243 @@
                     </div>
                 `;
             }
+        }
+        
+        async function loadComparison() {
+            const date1 = document.getElementById('compare-date1').value;
+            const date2 = document.getElementById('compare-date2').value;
+            
+            if (!date1 || !date2) {
+                alert('Please select both dates for comparison');
+                return;
+            }
+            
+            const contentDiv = document.getElementById('analysis-content');
+            contentDiv.innerHTML = '<div class="card"><div class="loading">Loading comparison...</div></div>';
+            
+            try {
+                // Fetch data for both days
+                const [data1Response, data2Response] = await Promise.all([
+                    fetch(`/api/analysis?start=${date1}`),
+                    fetch(`/api/analysis?start=${date2}`)
+                ]);
+                
+                if (!data1Response.ok || !data2Response.ok) {
+                    throw new Error('Failed to fetch comparison data');
+                }
+                
+                const data1 = await data1Response.json();
+                const data2 = await data2Response.json();
+                
+                displayComparison(data1, data2, date1, date2);
+                
+            } catch (error) {
+                console.error('Error loading comparison:', error);
+                contentDiv.innerHTML = `
+                    <div class="card">
+                        <div class="error">Error loading comparison: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayComparison(data1, data2, date1, date2) {
+            const contentDiv = document.getElementById('analysis-content');
+            
+            let html = `
+                <div class="card">
+                    <h2>🔄 Day Comparison: ${new Date(date1).toLocaleDateString()} vs ${new Date(date2).toLocaleDateString()}</h2>
+                    <div class="summary-grid">
+            `;
+            
+            // Compare summaries
+            if (data1.summary && data2.summary) {
+                const comparisons = [
+                    { label: 'High Temp', key: 'temp_high', unit: '°F' },
+                    { label: 'Low Temp', key: 'temp_low', unit: '°F' },
+                    { label: 'High Humidity', key: 'humidity_high', unit: '%' },
+                    { label: 'High Pressure', key: 'pressure_high', unit: ' hPa' },
+                    { label: 'Low Pressure', key: 'pressure_low', unit: ' hPa' },
+                    { label: 'Readings', key: 'reading_count', unit: '' }
+                ];
+                
+                comparisons.forEach(comp => {
+                    const val1 = data1.summary[comp.key];
+                    const val2 = data2.summary[comp.key];
+                    
+                    if (val1 !== undefined && val2 !== undefined) {
+                        const diff = val2 - val1;
+                        const diffStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+                        const arrow = diff > 0 ? '↗️' : diff < 0 ? '↘️' : '➡️';
+                        
+                        html += `
+                            <div class="summary-item">
+                                <div class="summary-value">${val1.toFixed(1)}${comp.unit} ${arrow} ${val2.toFixed(1)}${comp.unit}</div>
+                                <div class="summary-label">${comp.label} (${diffStr}${comp.unit})</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            html += '</div></div>';
+            
+            // Side-by-side weather charts
+            if (data1.weather_data?.length > 0 && data2.weather_data?.length > 0) {
+                html += `
+                    <div class="card">
+                        <h2>🌡️ Weather Conditions Comparison</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <h3 style="text-align: center; margin-bottom: 15px;">${new Date(date1).toLocaleDateString()}</h3>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="weatherChart1"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 style="text-align: center; margin-bottom: 15px;">${new Date(date2).toLocaleDateString()}</h3>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="weatherChart2"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Events comparison
+            if (data1.events?.length > 0 || data2.events?.length > 0) {
+                html += `
+                    <div class="card">
+                        <h2>🏷️ Events Comparison</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <h3>${new Date(date1).toLocaleDateString()} Events</h3>
+                                <div class="events-section">
+                `;
+                
+                if (data1.events?.length > 0) {
+                    data1.events.forEach(event => {
+                        const time = new Date(event.timestamp).toLocaleString();
+                        html += `
+                            <div class="event-item">
+                                <div class="event-time">${time}</div>
+                                <div class="event-type">${event.event_type}${event.intensity ? ` (${event.intensity})` : ''}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="no-data">No events recorded</div>';
+                }
+                
+                html += `
+                                </div>
+                            </div>
+                            <div>
+                                <h3>${new Date(date2).toLocaleDateString()} Events</h3>
+                                <div class="events-section">
+                `;
+                
+                if (data2.events?.length > 0) {
+                    data2.events.forEach(event => {
+                        const time = new Date(event.timestamp).toLocaleString();
+                        html += `
+                            <div class="event-item">
+                                <div class="event-time">${time}</div>
+                                <div class="event-type">${event.event_type}${event.intensity ? ` (${event.intensity})` : ''}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="no-data">No events recorded</div>';
+                }
+                
+                html += '</div></div></div></div>';
+            }
+            
+            contentDiv.innerHTML = html;
+            
+            // Create comparison charts
+            if (data1.weather_data?.length > 0) {
+                createComparisonChart('weatherChart1', data1.weather_data);
+            }
+            if (data2.weather_data?.length > 0) {
+                createComparisonChart('weatherChart2', data2.weather_data);
+            }
+        }
+        
+        function createComparisonChart(canvasId, weatherData) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            
+            const labels = weatherData.map(d => new Date(d.timestamp).toLocaleString([], {
+                hour: '2-digit', minute: '2-digit'
+            }));
+            const temperatures = weatherData.map(d => d.temperature_f);
+            const humidities = weatherData.map(d => d.humidity);
+            const pressures = weatherData.map(d => d.pressure_hpa);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temperature (°F)',
+                            data: temperatures,
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: humidities,
+                            borderColor: '#3182ce',
+                            backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperature (°F)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Humidity (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         function displayAnalysis(data) {
