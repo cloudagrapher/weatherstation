@@ -56,23 +56,19 @@ A distributed weather monitoring system built with Raspberry Pi devices, featuri
 
 ```
 weatherstation/
-├── src/                          # Core application code
-│   ├── sensor_to_influx.py      # Sensor data collection (weatherbox)
-│   ├── dashboard_masterbox.py   # Web dashboard (masterbox)
-│   ├── weather_api_service.py   # Weather API integration
-│   └── influxdb_data_service.py # Database access layer
-├── config/                       # Configuration files
-│   ├── influxdb_config.py       # InfluxDB connection settings
-│   └── gunicorn_config.py       # Production server config
+├── sensor_to_influx.py          # Sensor data collection (weatherbox)
+├── dashboard_masterbox.py       # Web dashboard (masterbox)
+├── weather_api_service.py       # Weather API integration
+├── influxdb_data_service.py     # Database access layer
+├── influxdb_config.py           # InfluxDB connection settings
+├── gunicorn_config.py           # Production server config
 ├── templates/                    # HTML templates
-│   ├── dashboard.html           # Main dashboard interface
-│   └── analysis.html           # Data analysis page
+│   └── dashboard.html           # Main dashboard interface
 ├── services/                     # Systemd service definitions
 │   ├── weather-dashboard.service
 │   └── weather-sensors.service
 ├── scripts/                      # Utility scripts
-│   ├── data_maintenance/        # Database maintenance tools
-│   └── testing/                 # Test scripts
+│   └── data_maintenance/        # Database maintenance tools
 ├── wheels/                      # Python package wheels
 ├── wsgi.py                      # WSGI entry point
 └── requirements.txt             # Python dependencies
@@ -106,17 +102,17 @@ weatherstation/
 source .venv/bin/activate
 
 # Run dashboard (masterbox)
-python src/dashboard_masterbox.py
+python dashboard_masterbox.py
 
 # Run sensors (weatherbox)  
-python src/sensor_to_influx.py
+python sensor_to_influx.py
 ```
 
 ### Production Deployment
 
 ```bash
 # Start production dashboard
-gunicorn --config config/gunicorn_config.py wsgi:application
+gunicorn --config gunicorn_config.py wsgi:application
 ```
 
 ### Service Management
@@ -138,7 +134,7 @@ sudo systemctl restart weather-sensors.service
 ## Configuration
 
 ### InfluxDB Setup
-Edit `config/influxdb_config.py`:
+Edit `influxdb_config.py`:
 ```python
 INFLUX_HOST = "masterbox"  # or IP address
 INFLUX_PORT = 8086
