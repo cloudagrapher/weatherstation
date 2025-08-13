@@ -885,30 +885,14 @@
                             display: true,
                             title: {
                                 display: true,
-                                text: 'Time',
-                                font: {
-                                    size: 12
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
+                                text: 'Time'
                             }
                         },
                         y: {
                             display: true,
                             title: {
                                 display: true,
-                                text: 'Pressure (hPa)',
-                                font: {
-                                    size: 12
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
+                                text: 'Pressure (hPa)'
                             },
                             min: 980,
                             max: 1050,
@@ -1264,83 +1248,23 @@
             const is6Hour = currentPressureRange === '6h';
             const is5Day = currentPressureRange === '5d';
             
-            // Generate meaningful time labels based on range
+            // Simple time labels approach
             const now = new Date();
-            const getRelativeTimeLabel = (timestamp, isLast = false) => {
-                if (isLast) return 'Now';
-                
-                const date = new Date(timestamp);
-                const diffMs = now - date;
-                const diffMinutes = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMinutes / 60);
-                const diffDays = Math.floor(diffHours / 24);
-                
-                if (is5Day) {
-                    if (diffDays === 0) return 'Today';
-                    if (diffDays === 1) return 'Yesterday';
-                    return `${diffDays}d ago`;
-                } else if (diffHours >= 1) {
-                    return `${diffHours}h ago`;
-                } else if (diffMinutes >= 1) {
-                    return `${diffMinutes}m ago`;
-                } else {
-                    return 'Now';
-                }
-            };
             
-            if (isMobile && is1Hour) {
-                // For mobile 1-hour view, show very few labels
-                const labelInterval = Math.max(1, Math.floor(filteredData.length / 4));
-                labels = filteredData.map((d, i) => {
-                    if (i === 0 || i === filteredData.length - 1 || i % labelInterval === 0) {
-                        return getRelativeTimeLabel(d.timestamp, i === filteredData.length - 1);
-                    }
-                    return '';
-                });
-                smoothingLevel = 7;
-            } else if (isMobile && is5Day) {
-                // For mobile 5-day view, show dates
-                const labelInterval = Math.max(1, Math.floor(filteredData.length / 5));
-                labels = filteredData.map((d, i) => {
-                    if (i === 0 || i === filteredData.length - 1 || i % labelInterval === 0) {
-                        return getRelativeTimeLabel(d.timestamp, i === filteredData.length - 1);
-                    }
-                    return '';
-                });
-                smoothingLevel = 8;
-            } else if (isMobile) {
-                // For mobile other views, moderate label reduction
-                const labelInterval = Math.max(1, Math.floor(filteredData.length / 6));
-                labels = filteredData.map((d, i) => {
-                    if (i === 0 || i === filteredData.length - 1 || i % labelInterval === 0) {
-                        return getRelativeTimeLabel(d.timestamp, i === filteredData.length - 1);
-                    }
-                    return '';
-                });
-                smoothingLevel = is5Day ? 8 : 5;
-            } else {
-                // Desktop view - show more labels
-                let labelInterval;
+            // Generate basic time labels for now - just use times
+            labels = filteredData.map((d, i) => {
+                const date = new Date(d.timestamp);
                 if (is5Day) {
-                    labelInterval = Math.max(1, Math.floor(filteredData.length / 12));
-                } else if (is1Hour) {
-                    labelInterval = Math.max(1, Math.floor(filteredData.length / 6));
-                } else if (is6Hour) {
-                    labelInterval = Math.max(1, Math.floor(filteredData.length / 8));
+                    return date.toLocaleDateString([], {month: 'short', day: 'numeric'});
                 } else {
-                    labelInterval = Math.max(1, Math.floor(filteredData.length / 10));
+                    return formatTime(d.timestamp);
                 }
-                
-                labels = filteredData.map((d, i) => {
-                    if (i === 0 || i === filteredData.length - 1 || i % labelInterval === 0) {
-                        return getRelativeTimeLabel(d.timestamp, i === filteredData.length - 1);
-                    }
-                    return '';
-                });
-                smoothingLevel = is5Day ? 6 : 4;
-            }
+            });
+            
+            smoothingLevel = is5Day ? (isMobile ? 8 : 6) : (isMobile ? 7 : 4);
             
             const pressures = smoothData(filteredData.map(d => d.pressure_hpa), smoothingLevel);
+            
             
             pressureChart.data.labels = labels;
             pressureChart.data.datasets[0].data = pressures;
@@ -1356,63 +1280,42 @@
             }
             
             // Fixed Y-axis scaling - always use full meteorological range
+            if (!pressureChart.options.scales.y) {
+                pressureChart.options.scales.y = {};
+            }
             pressureChart.options.scales.y.min = 980;
             pressureChart.options.scales.y.max = 1050;
             
-            // Mobile-specific optimizations
-            if (pressures.length > 0) {
-                if (isMobile) {
-                    // Reduce clutter further on mobile
-                    pressureChart.options.scales.y.ticks = {
-                        maxTicksLimit: is1Hour ? 4 : 5, // Even fewer ticks for 1-hour view
-                        callback: function(value) {
-                            return Math.round(value * 10) / 10;
-                        },
-                        font: {
-                            size: 10
-                        }
-                    };
-                    
-                    // Adjust X-axis based on time range
-                    let maxXTicks;
-                    if (is1Hour) {
-                        maxXTicks = 3;
-                    } else if (is6Hour) {
-                        maxXTicks = 4;
-                    } else if (is5Day) {
-                        maxXTicks = 5;
-                    } else {
-                        maxXTicks = 4;
-                    }
-                    
-                    pressureChart.options.scales.x.ticks = {
-                        maxTicksLimit: maxXTicks,
-                        maxRotation: is5Day ? 45 : 0, // Rotate dates slightly for 5-day view
-                        font: {
-                            size: 10
-                        }
-                    };
-                    
-                    // Hide legend on very small screens for short time ranges
-                    if ((is1Hour || is6Hour) && window.innerWidth <= 480) {
-                        pressureChart.options.plugins.legend.display = false;
-                    } else {
-                        pressureChart.options.plugins.legend.display = true;
-                        pressureChart.options.plugins.legend.labels.font = { size: 10 };
-                    }
-                    
-                    // Adjust axis titles
-                    pressureChart.options.scales.x.title.font = { size: 10 };
-                    pressureChart.options.scales.y.title.font = { size: 10 };
+            // Configure chart for mobile/desktop
+            if (isMobile) {
+                // Mobile settings
+                pressureChart.options.scales.x.ticks = {
+                    maxTicksLimit: is1Hour ? 4 : 6,
+                    maxRotation: 45,
+                    font: { size: 10 }
+                };
+                pressureChart.options.scales.y.ticks = {
+                    maxTicksLimit: 5,
+                    font: { size: 10 }
+                };
+                
+                // Hide legend on very small screens for short ranges
+                if ((is1Hour || is6Hour) && window.innerWidth <= 480) {
+                    pressureChart.options.plugins.legend.display = false;
                 } else {
-                    // Desktop settings
                     pressureChart.options.plugins.legend.display = true;
-                    pressureChart.options.plugins.legend.labels.font = { size: 12 };
-                    pressureChart.options.scales.x.title.font = { size: 12 };
-                    pressureChart.options.scales.y.title.font = { size: 12 };
-                    pressureChart.options.scales.x.ticks.font = { size: 11 };
-                    pressureChart.options.scales.y.ticks.font = { size: 11 };
                 }
+            } else {
+                // Desktop settings
+                pressureChart.options.scales.x.ticks = {
+                    maxTicksLimit: is1Hour ? 6 : is5Day ? 10 : 8,
+                    maxRotation: 45,
+                    font: { size: 11 }
+                };
+                pressureChart.options.scales.y.ticks = {
+                    font: { size: 11 }
+                };
+                pressureChart.options.plugins.legend.display = true;
             }
             
             pressureChart.update();
