@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 from influxdb_data_service import WeatherDataService
+from weather_api_service import WeatherAPIService
 
 # Seasonal fog probability for Smyrna, GA (30080) humid subtropical climate
 FOG_SEASONAL_PROBABILITY = {
@@ -48,6 +49,7 @@ class WeatherDashboard:
     
     def __init__(self):
         self.data_service = WeatherDataService()
+        self.api_service = WeatherAPIService()
         self.current_data = {}
         self.socketio = None
         self._update_current_data()
@@ -107,6 +109,9 @@ class WeatherDashboard:
         predictions = self.predict_weather()
         enhanced_data["predictions"] = predictions
         enhanced_data["daily_summary"] = self.get_daily_summary()
+        
+        # Add official weather comparison
+        enhanced_data["api_comparison"] = self.get_api_comparison()
         
         # Store predictions in InfluxDB for historical analysis
         if predictions:
@@ -269,7 +274,7 @@ class WeatherDashboard:
         return descriptions
     
     def detect_current_conditions(self):
-        """Detect current weather conditions based on sensor readings"""
+        """Detect current weather conditions based on sensor readings - optimized for Smyrna, GA"""
         if not self.current_data:
             return []
         
@@ -279,35 +284,64 @@ class WeatherDashboard:
         
         current_conditions = []
         
-        # ACTIVE PRECIPITATION DETECTION
-        if humidity > 85:
-            if humidity > 95:
-                current_conditions.append("🌧️ HEAVY PRECIPITATION LIKELY - Humidity near saturation")
-            else:
-                current_conditions.append("🌦️ LIGHT PRECIPITATION POSSIBLE - Very high humidity")
+        # Calculate dew point for thunderstorm analysis
+        temp_c = (temp_f - 32) * 5/9
+        try:
+            a, b = 17.27, 237.7
+            alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
+            dew_point_c = (b * alpha) / (a - alpha)
+            dew_point_f = (dew_point_c * 9/5) + 32
+            temp_dew_spread = temp_f - dew_point_f
+        except:
+            dew_point_f = temp_f - 20  # fallback
+            temp_dew_spread = 20
         
-        # THUNDERSTORM CONDITIONS  
-        if temp_f > 70 and humidity > 75:
-            temp_c = (temp_f - 32) * 5/9
-            try:
-                # Calculate dew point
-                a, b = 17.27, 237.7
-                alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
-                dew_point_c = (b * alpha) / (a - alpha)
-                dew_point_f = (dew_point_c * 9/5) + 32
-                temp_dew_spread = temp_f - dew_point_f
-                
-                if temp_dew_spread < 5:
-                    current_conditions.append("⛈️ THUNDERSTORM CONDITIONS - Very unstable atmosphere")
-                elif temp_dew_spread < 10:
-                    current_conditions.append("⚡ THUNDERSTORM POSSIBLE - Moderate instability")
-            except:
-                pass
+        # Get pressure change rate for storm analysis
+        pressure_change_rate = 0
+        if pressure:
+            recent_readings = self.data_service.get_recent_data(hours=1)
+            pressure_readings = [r for r in recent_readings if "pressure_hpa" in r]
+            if len(pressure_readings) >= 2:
+                pressure_change_rate = (pressure_readings[-1]["pressure_hpa"] - pressure_readings[0]["pressure_hpa"]) / 1.0
+        
+        # Check for sustained high humidity (10+ minutes)
+        humidity_sustained = False
+        if humidity >= 92:
+            recent_10min = self.data_service.get_recent_data(minutes=10)
+            if len(recent_10min) >= 3:  # At least 3 readings in 10 minutes
+                high_humidity_count = sum(1 for r in recent_10min if r.get("humidity", 0) >= 92)
+                humidity_sustained = high_humidity_count >= len(recent_10min) * 0.7  # 70% of readings
+        
+        # IMPROVED HEAVY PRECIPITATION DETECTION
+        if humidity >= 92 and (pressure_change_rate <= -1.5 or humidity_sustained):
+            current_conditions.append("🌧️ HEAVY PRECIPITATION LIKELY/ONGOING - High humidity with pressure fall or sustained moisture")
+        elif humidity > 85:
+            current_conditions.append("🌦️ LIGHT PRECIPITATION POSSIBLE - Very high humidity")
+        
+        # IMPROVED THUNDERSTORM CONDITIONS FOR SMYRNA, GA
+        # Primary rule: T ≥ 82°F, dewpoint ≥ 66°F, pressure falling ≥ 1.5 hPa/hr
+        if temp_f >= 82 and dew_point_f >= 66 and pressure_change_rate <= -1.5:
+            current_conditions.append("⛈️ THUNDERSTORM LIKELY (2-6h) - Heat + moisture + pressure fall")
+        # Alternative rule: T ≥ 78°F, dewpoint ≥ 70°F, spread ≤ 12°F
+        elif temp_f >= 78 and dew_point_f >= 70 and temp_dew_spread <= 12:
+            current_conditions.append("⚡ THUNDERSTORM POSSIBLE - High dewpoint with low spread")
+        # Bonus signals: brief RH spike or pressure volatility
+        elif temp_f >= 75:
+            # Check for humidity spike in last 30 minutes
+            humidity_spike = False
+            recent_30min = self.data_service.get_recent_data(minutes=30)
+            if len(recent_30min) >= 2:
+                humidity_change = recent_30min[-1].get("humidity", 0) - recent_30min[0].get("humidity", 0)
+                if humidity_change >= 8:  # +8-12% spike
+                    humidity_spike = True
+            
+            if humidity_spike:
+                current_conditions.append("⚡ THUNDERSTORM POSSIBLE - Rapid moisture increase detected")
         
         # PRESSURE VOLATILITY (indicates active weather)
         recent_readings = self.data_service.get_recent_data(minutes=30)
         if len(recent_readings) >= 3:
-            pressure_values = [r.get("pressure_hpa") for r in recent_readings if r.get("pressure_hpa") is not None]
+            pressure_values = [r["pressure_hpa"] for r in recent_readings if r.get("pressure_hpa") is not None]
             if len(pressure_values) >= 3:
                 pressure_range = max(pressure_values) - min(pressure_values)
                 if pressure_range > 2:
@@ -620,12 +654,39 @@ class WeatherDashboard:
                 predictions.append("🏜️ Very dry conditions - elevated fire risk")
                 confidence_scores["fire"] = 70
         
-        # Add confidence indicator
+        # IMPROVED CONFIDENCE CALCULATION using noisy-OR approach
         if predictions and confidence_scores:
-            avg_confidence = sum(confidence_scores.values()) / len(confidence_scores)
-            if avg_confidence > 80:
+            # Separate severe signals from routine ones
+            severe_signals = []
+            routine_signals = []
+            
+            for signal_type, confidence in confidence_scores.items():
+                # Severe signals get priority weighting
+                if signal_type in ["storm", "thunderstorm", "deteriorating", "storm_clearing"] and confidence >= 75:
+                    severe_signals.append(confidence / 100.0)  # Convert to probability
+                elif confidence >= 50:
+                    routine_signals.append(confidence / 100.0)
+            
+            # Calculate combined confidence using noisy-OR for severe signals
+            if severe_signals:
+                # P = 1 - ∏(1 - p_i) for severe signals
+                severe_combined = 1.0 - math.prod(1.0 - p for p in severe_signals)
+                # Set minimum floor for severe signals
+                final_confidence = max(severe_combined * 100, 75)  # At least 75% for severe
+            elif routine_signals:
+                # Weighted average for routine signals
+                weights = [2.0 if signal_type in ["pressure_change", "dewpoint"] else 1.0 
+                          for signal_type in confidence_scores.keys()]
+                weighted_sum = sum(conf * weight for conf, weight in zip(routine_signals, weights[:len(routine_signals)]))
+                weight_total = sum(weights[:len(routine_signals)])
+                final_confidence = (weighted_sum / weight_total) * 100 if weight_total > 0 else 50
+            else:
+                final_confidence = 50
+            
+            # Apply confidence labels
+            if final_confidence > 80:
                 predictions.insert(0, "📊 High confidence forecast (>80%)")
-            elif avg_confidence > 60:
+            elif final_confidence > 60:
                 predictions.insert(0, "📊 Moderate confidence forecast (60-80%)")
             else:
                 predictions.insert(0, "📊 Low confidence forecast (<60%) - monitor closely")
@@ -649,6 +710,54 @@ class WeatherDashboard:
     def get_daily_summary(self):
         """Get today's temperature, humidity, and pressure range"""
         return self.data_service.get_daily_summary()
+    
+    def get_api_comparison(self):
+        """Get comparison between local sensors and official weather data"""
+        try:
+            if not self.current_data:
+                return {"error": "No local data available"}
+            
+            # Get official weather summary
+            official_summary = self.api_service.get_weather_summary()
+            if "error" in official_summary:
+                return official_summary
+            
+            # Get detailed comparison
+            comparison = self.api_service.compare_with_local(
+                local_temp_f=self.current_data.get("temperature_f"),
+                local_humidity=self.current_data.get("humidity"), 
+                local_pressure_hpa=self.current_data.get("pressure_hpa")
+            )
+            
+            # Combine for dashboard display
+            result = {
+                "official": official_summary,
+                "comparison": comparison,
+                "summary_status": self._get_overall_comparison_status(comparison)
+            }
+            
+            return result
+            
+        except Exception as e:
+            return {"error": f"API comparison failed: {str(e)}"}
+    
+    def _get_overall_comparison_status(self, comparison):
+        """Get overall status from individual comparisons"""
+        if "error" in comparison:
+            return "unavailable"
+        
+        statuses = [comp.get("status", "unknown") for comp in comparison.get("comparisons", [])]
+        
+        if not statuses:
+            return "no_data"
+        elif all(status == "excellent" for status in statuses):
+            return "excellent"  # All excellent
+        elif all(status in ["excellent", "good"] for status in statuses):
+            return "good"       # All good or better
+        elif any(status == "check_calibration" for status in statuses):
+            return "check_calibration"  # At least one needs calibration
+        else:
+            return "mixed"      # Mixed results
     
     def add_event_tag(self, event_type, intensity=None, notes=None):
         """Add a user-tagged event with current conditions stored in InfluxDB"""
@@ -906,6 +1015,16 @@ def api_predictions():
 def analysis_page():
     """Historical analysis page"""
     return render_template("analysis.html")
+
+
+@app.route("/api/weather_comparison")
+def api_weather_comparison():
+    """Get comparison between local sensors and official weather data"""
+    try:
+        comparison = dashboard.get_api_comparison()
+        return jsonify(comparison)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 def update_data_periodically():
